@@ -1,0 +1,26 @@
+node_modules/
+.npm-cache/
+.supabase-home/
+/supabase/.branches/
+/supabase/.temp/
+dist/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.*
+!.env.example
+*.local
+*.log
+*.tsbuildinfo
+.vercel/
+.DS_Store
+Thumbs.db
+*.pem
+*.key
+credentials*.json
+service-account*.json
+
+# Local implementation records and design reference screenshots.
+/docs/implementations/
+/design/screenshots/

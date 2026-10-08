@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --background: #0b1326;
+  --foreground: #f1f5f9;
+  --card: #1b2337;
+  --card-foreground: #f1f5f9;
+  --primary: #06b6d4;
+  --primary-foreground: #061421;
+  --secondary: #1e1b4b;
+  --secondary-foreground: #e0e7ff;
+  --accent: #232c42;
+  --accent-foreground: #f1f5f9;
+  --muted: #131b2e;
+  --muted-foreground: #94a3b8;
+  --destructive: #fb7185;
+  --border: rgba(255, 255, 255, .14);
+  --input: rgba(255, 255, 255, .14);
+  --ring: #06b6d4;
+  --radius: .625rem;
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; font-family: Geist, Inter, system-ui, sans-serif; }
+  :focus-visible { outline: 3px solid var(--ring); outline-offset: 4px; }
+  button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+}
+.eyebrow { color: var(--primary); font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.skip-link { position: fixed; top: .5rem; left: .5rem; z-index: 10; padding: .6rem 1rem; background: var(--card); color: var(--primary); transform: translateY(-200%); }
+.skip-link:focus { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

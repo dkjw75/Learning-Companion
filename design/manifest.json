@@ -1,0 +1,22 @@
+{
+  "status": "references_supplied",
+  "approvedStitchVersion": null,
+  "receivedDate": "2026-10-08",
+  "planningDocument": "https://docs.google.com/document/d/1PRz_CMHGRaG2JbfjWrIlTbNEuoneaibxopdoYjgL9Wc/edit?tab=t.0",
+  "designRulesFile": "DESIGN.md",
+  "stitchFiles": [
+    { "path": "screenshots/knowledge-map-overview.png", "screen": "Knowledge map overview", "kind": "user_supplied_screenshot" },
+    { "path": "screenshots/knowledge-map-node-details.png", "screen": "Knowledge map selected node and details", "kind": "user_supplied_screenshot" },
+    { "path": "screenshots/home.png", "screen": "Home and activity skyline", "kind": "user_supplied_screenshot" },
+    { "path": "screenshots/lesson-with-tutor.png", "screen": "Lesson with tutor panel", "kind": "user_supplied_screenshot" },
+    { "path": "screenshots/quiz.png", "screen": "Quiz answer selection", "kind": "user_supplied_screenshot" }
+  ],
+  "selected21stDevComponents": [
+    { "id": "sign-in-card-2", "author": "jatin-yadav05", "url": "https://21st.dev/?preview=%2F%40jatin-yadav05%2Fcomponents%2Fsign-in-card-2", "purpose": "sign in", "sourceReviewStatus": "pending", "installed": false },
+    { "id": "onboarding-3", "author": "olewandowski1", "url": "https://21st.dev/?qt=onboarding&preview=%2F%40olewandowski1%2Fcomponents%2Fonboarding-3", "purpose": "onboarding", "sourceReviewStatus": "pending", "installed": false },
+    { "id": "background-ascii-wake", "author": "nikolas-sapa", "url": "https://21st.dev/?qt=background&preview=%2F%40nikolas-sapa%2Fcomponents%2Fbackground-ascii-wake", "purpose": "background", "sourceReviewStatus": "pending", "installed": false },
+    { "id": "contribution-skyline", "author": "kedhareswer", "url": "https://21st.dev/?preview=%2F%40kedhareswer%2Fcomponents%2Fcontribution-skyline", "purpose": "contributions/streaks in home page", "sourceReviewStatus": "pending", "installed": false },
+    { "id": "flow-button", "author": "xubohuah", "url": "https://21st.dev/?qt=button&preview=%2F%40xubohuah%2Fcomponents%2Fflow-button", "purpose": "button", "sourceReviewStatus": "pending", "installed": false }
+  ],
+  "notes": "The user supplied DESIGN.md and five screenshot references. Screen code exports, a Stitch project/version identifier, and mobile screenshots have not been supplied. Follow design/README.md and the PRD when illustrative screenshot/design copy differs from product rules. Screenshots and implementation logs are locally available but Git-ignored. The existing shadcn foundation provenance is preserved in component-references.md."
+}
