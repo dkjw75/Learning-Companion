@@ -51,4 +51,29 @@ describe('foundation API', () => {
     expect(getProfile).toHaveBeenCalledExactlyOnceWith('verified.token');
     expect(meEnvelopeSchema.parse(response.body).data).toEqual(profile);
   });
+  it('saves a five-answer starting check without creating a learning status', async () => {
+    const completeOnboarding = vi.fn().mockResolvedValue({ ...profile, onboardingComplete: true });
+    const answers = [
+      ['interest', 'cloud'], ['confidence', 'some'], ['practice', 'cloud_tools'],
+      ['goal', 'project'], ['pace', 'balanced'],
+    ].map(([questionId, answerId]) => ({ questionId, answerId }));
+    const response = await request(createApp({ getProfile: vi.fn(), completeOnboarding }))
+      .post('/api/onboarding/diagnostic').set('Authorization', 'Bearer verified.token')
+      .send({ interests: ['cloud', 'cybersecurity'], experienceLevel: 'some', timezone: 'Asia/Singapore', skippedDiagnostic: false, answers }).expect(200);
+    expect(response.body.data.onboardingComplete).toBe(true);
+    expect(response.body.data).not.toHaveProperty('learningStatus');
+    expect(completeOnboarding).toHaveBeenCalledWith('verified.token', expect.objectContaining({ answers }));
+    await request(createApp({ getProfile: vi.fn(), completeOnboarding })).post('/api/onboarding/diagnostic')
+      .set('Authorization', 'Bearer verified.token')
+      .send({ interests: [], experienceLevel: 'new', timezone: 'UTC', skippedDiagnostic: false, answers: [] }).expect(400);
+    expect(completeOnboarding).toHaveBeenCalledTimes(1);
+  });
+  it('requires authentication for private home data', async () => {
+    const getHome = vi.fn().mockResolvedValue({ concepts: [], recommendationId: null, reviewIds: [], activityCounts: [], recentSession: null });
+    await request(createApp({ getProfile: vi.fn(), getHome })).get('/api/home').expect(401);
+    const response = await request(createApp({ getProfile: vi.fn(), getHome })).get('/api/home')
+      .set('Authorization', 'Bearer verified.token').expect(200);
+    expect(response.body.data.concepts).toEqual([]);
+    expect(getHome).toHaveBeenCalledExactlyOnceWith('verified.token');
+  });
 });

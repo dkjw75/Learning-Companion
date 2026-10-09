@@ -58,7 +58,8 @@ try {
   assert.ifError(crossProfile.error);
   assert.deepEqual(crossProfile.data, []);
   const crossUpdate = await first.from('profiles').update({ timezone: 'Pacific/Honolulu' }).eq('user_id', secondUser.id).select('user_id');
-  assert.equal(crossUpdate.error?.code, '42501');
+  assert.ifError(crossUpdate.error);
+  assert.deepEqual(crossUpdate.data, [], 'Owner RLS must hide another learner’s row from updates.');
   const unchanged = await database.query('select timezone from public.profiles where user_id=$1', [secondUser.id]);
   assert.notEqual(unchanged.rows[0].timezone, 'Pacific/Honolulu');
 

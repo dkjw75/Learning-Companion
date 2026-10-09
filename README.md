@@ -1,6 +1,6 @@
 # LearningCompanion
 
-Stage 2 foundation for the visual technology learning companion described in [PRD.md](PRD.md), [technical design](docs/technical-design.md), and [build plan](docs/build-plan.md).
+Stage 3 onboarding and home for the visual technology learning companion described in [PRD.md](PRD.md), [technical design](docs/technical-design.md), and [build plan](docs/build-plan.md).
 
 ## Local setup
 
@@ -11,11 +11,11 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:5173. The API listens on http://127.0.0.1:3000; Vite proxies `/api` to it. The student landing page offers a guest action when Supabase is configured. `GET /api/health` confirms the Express process is reachable; it does not establish database, auth, or provider readiness.
+Open http://127.0.0.1:5173. The API listens on http://127.0.0.1:3000; Vite proxies `/api` to it. A new guest enters onboarding; completed onboarding returns to Home after refresh. `GET /api/health` confirms the Express process is reachable; it does not establish database, auth, or provider readiness.
 
 Copy `.env.example` to the root `.env` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from the dedicated Supabase project's **Connect** panel. Set `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` to the same values for API token verification. Set `DATABASE_URL` to the project's database connection string for migration and live checks; replace the password placeholder without its brackets and URL-encode reserved characters in the password. Enable **Allow anonymous sign-ins** in the project's Authentication settings. Restart the local dev processes after changing `.env`. Only the two `VITE_` fields enter the browser; `.env` is ignored.
 
-For Stage 2 database setup and verification, use `npm run db:remote:dry-run`, then `npm run db:remote:push` on the dedicated development target. `npm run db:offline` replays migrations in embedded PostgreSQL without Docker. `npm run db:live` verifies two real guests, RLS, and private data boundaries; `npm run guest:browser:live` verifies that a browser refresh restores the same guest. The database URL is never printed by these scripts.
+For database setup and verification, use `npm run db:remote:dry-run`, then `npm run db:remote:push` on the dedicated development target. Stage 3 requires `20261009000200_onboarding.sql` before onboarding can save. `npm run db:offline` replays migrations in embedded PostgreSQL without Docker. `npm run db:live` verifies two real guests, RLS, and private data boundaries; `npm run guest:browser:live` verifies that a browser refresh restores the same guest. The database URL is never printed by these scripts.
 
 ## Workspaces and verification
 
@@ -40,10 +40,10 @@ Source modes are `source_grounded` and `unverified`; learning statuses are `not_
 
 Lesson schemas check four to six steps, at most two diagrams, at most eight nodes per diagram, rectangular tables, unique IDs, valid edge endpoints, highlights, and local citation references. Text is data, never generated markup. Server-side approval/retrieval checks must still validate actual citation provenance; structural schemas do not establish factual accuracy. Assessment grading, transactional progress projection, and round-family comparisons across history arrive in later stages.
 
-Stage 2 includes the Supabase database baseline, RLS, verified `/api/me`, guest identity, and reserved content/source tables. Lessons, AI provider calls, onboarding, and deployment remain later stages.
+Stage 3 adds interest and experience selection, a skippable five-question starting check, verified onboarding save, and Home/Learn/Knowledge Map views backed by the catalogue and per-user progress. Diagnostic answers do not create concept progress. Lesson generation and full review remain later work.
 
 ## Design and client state
 
-The user supplied [design rules](design/DESIGN.md), five local screenshots, and five selected 21st.dev component references. [Design handoff notes](design/README.md) explain their dark navy/cyan direction and the PRD rules governing example content; [design/manifest.json](design/manifest.json) records the files and selections. The foundation UI uses the dark navy/cyan theme. [Component references](design/component-references.md) retain the official shadcn source, MIT notice, and local adaptations; selected 21st.dev source remains to be imported in the relevant stages. Only Button and Card are imported so far. The `@/*` alias resolves to `client/src/*`; `client/components.json` configures further shadcn additions. Implementation logs and reference screenshots remain local and are Git-ignored.
+The user supplied [design rules](design/DESIGN.md), five local reference screenshots, and five selected 21st.dev component references. [Design handoff notes](design/README.md) explain their dark navy/cyan direction and the PRD rules governing example content; [design/manifest.json](design/manifest.json) records the files and selections. The foundation UI uses the dark navy/cyan theme. [Component references](design/component-references.md) record provenance and local adaptations for shadcn Button/Card and the selected Background ASCII Wake. The other 21st.dev selections await review. The `@/*` alias resolves to `client/src/*`; `client/components.json` configures further shadcn additions. Implementation logs and reference screenshots remain local and are Git-ignored.
 
 TanStack Query owns product API request state; health verification is handled independently by tests or terminal tools. Session Context creates and restores a Supabase guest, verifies it against `/api/me`, and clears cached data on identity changes. Private query keys must include the verified user ID. Theme variables in `client/src/style.css` are shared across local UI primitives and honor reduced motion.

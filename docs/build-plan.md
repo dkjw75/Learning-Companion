@@ -67,9 +67,9 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 
 **Work:**
 
-- Build interests/experience selection and a skippable five-question diagnostic spanning the three initial areas.
+- Build interests/experience selection through a skippable five-question diagnostic. Questions should be general areas of interest / experience in tech.
 - Save diagnostic evidence without awarding full concept understanding.
-- Build home with Learn, Review, resume, and basic catalogue-order recommendations.
+- Build home according to home.pmg with nav tabs labelled as Home, Learn, Knowledge Map.
 - Apply the approved Stitch shell and relevant 21st.dev navigation/cards, using shared theme variables and real API data.
 - Keep lesson generation unavailable until approved reference material and the Stage 6 generation service are ready; recommendations can show catalogue concepts before lessons are enabled.
 

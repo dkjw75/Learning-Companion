@@ -1,9 +1,12 @@
-import { Button } from '@/components/ui/button';
+import { ButtonUi } from '@/components/ui/button-ui';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSession } from '@/auth/session-context';
+import { Navigate } from 'react-router';
 
 export function FoundationView() {
   const guest = useSession();
+  if (guest.profile?.onboardingComplete) return <Navigate to="/home" replace />;
+  if (guest.session && guest.profile) return <Navigate to="/onboarding" replace />;
   return <div className="max-w-3xl">
     <section aria-labelledby="intro-heading">
       <p className="eyebrow mb-5">Visual technology learning</p>
@@ -16,12 +19,12 @@ export function FoundationView() {
           {guest.status === 'loading' && <p role="status">Loading…</p>}
           {guest.status === 'unconfigured' && <>
             <p role="status" className="mb-4 text-muted-foreground">Starting as a guest is unavailable right now. Please try again later.</p>
-            <Button disabled>Start as guest</Button>
+            <ButtonUi disabled>Start as guest</ButtonUi>
           </>}
           {guest.status === 'ready' && guest.session && <p role="status" className="font-semibold text-primary">Your progress is saved in this browser.</p>}
-          {guest.status === 'ready' && !guest.session && <Button disabled={guest.starting} onClick={() => { void guest.startGuest(); }}>
+          {guest.status === 'ready' && !guest.session && <ButtonUi disabled={guest.starting} onClick={() => { void guest.startGuest(); }}>
             {guest.starting ? 'Starting…' : 'Start as guest'}
-          </Button>}
+          </ButtonUi>}
           {guest.error && <p role="alert" className="mt-4 text-destructive">{guest.error}</p>}
         </CardContent>
       </Card>

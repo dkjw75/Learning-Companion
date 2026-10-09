@@ -13,6 +13,7 @@ type SessionContextValue = {
   starting: boolean;
   error: string | null;
   startGuest: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   replaceSession: (session: SessionIdentity | null) => void;
 };
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -97,8 +98,14 @@ export function SessionProvider({ children, client = getSupabaseClient(), loadPr
       setStarting(false);
     }
   }, [client, replaceSession, starting, verifyStoredSession]);
-  const value = useMemo(() => ({ session, profile, status, starting, error, startGuest, replaceSession }),
-    [session, profile, status, starting, error, startGuest, replaceSession]);
+  const refreshProfile = useCallback(async () => {
+    if (!client) throw new Error('No guest session.');
+    const { data: { session: stored } } = await client.auth.getSession();
+    if (!stored) throw new Error('No guest session.');
+    await verifyStoredSession(stored.access_token);
+  }, [client, verifyStoredSession]);
+  const value = useMemo(() => ({ session, profile, status, starting, error, startGuest, refreshProfile, replaceSession }),
+    [session, profile, status, starting, error, startGuest, refreshProfile, replaceSession]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 

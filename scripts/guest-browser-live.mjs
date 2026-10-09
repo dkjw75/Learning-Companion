@@ -28,7 +28,7 @@ try {
   await page.goto('http://127.0.0.1:5174/');
   await page.getByRole('button', { name: 'Start as guest' }).click();
   try {
-    await page.getByText('Your progress is saved in this browser.').waitFor({ timeout: 15000 });
+    await page.getByRole('heading', { name: 'What sparks your curiosity?' }).waitFor({ timeout: 15000 });
   } catch (error) {
     const alerts = await page.getByRole('alert').allTextContents();
     const visibleText = (await page.locator('body').innerText()).slice(0, 800);
@@ -42,13 +42,37 @@ try {
   });
   assert.ok(first, 'Supabase did not persist the guest identity in browser storage.');
   await page.reload();
-  await page.getByText('Your progress is saved in this browser.').waitFor({ timeout: 15000 });
+  await page.getByRole('heading', { name: 'What sparks your curiosity?' }).waitFor({ timeout: 15000 });
+  if (process.env.ONBOARDING_PREVIEW_PATH) {
+    await page.screenshot({ path: process.env.ONBOARDING_PREVIEW_PATH, fullPage: true });
+  }
+  await page.getByRole('button', { name: /Cloud computing/ }).click();
+  await page.getByRole('button', { name: /Cybersecurity/ }).click();
+  assert.equal(await page.getByRole('button', { name: /Cloud computing/ }).getAttribute('aria-pressed'), 'true');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('heading', { name: 'Where are you starting from?' }).waitFor();
+  await page.getByRole('radio', { name: /Some experience/ }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('heading', { name: 'Which tech topic would you explore first?' }).waitFor();
+  await page.getByRole('button', { name: 'Skip check' }).click();
+  await page.getByRole('heading', { name: /Welcome back/ }).waitFor({ timeout: 15000 });
+  await page.reload();
+  await page.getByRole('heading', { name: /Welcome back/ }).waitFor({ timeout: 15000 });
   const restored = await page.evaluate(() => {
     const key = Object.keys(localStorage).find(name => /^sb-.*-auth-token$/.test(name));
     return key ? JSON.parse(localStorage.getItem(key)).user?.id ?? null : null;
   });
   assert.equal(restored, first);
-  console.log('Live browser passed: anonymous guest creation and refresh restore the same Supabase UUID.');
+  const profileResponse = await page.evaluate(async () => {
+    const key = Object.keys(localStorage).find(name => /^sb-.*-auth-token$/.test(name));
+    const token = key ? JSON.parse(localStorage.getItem(key)).access_token : null;
+    const response = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+    return response.json();
+  });
+  assert.deepEqual(profileResponse.data.interests, ['cloud', 'cybersecurity']);
+  assert.equal(profileResponse.data.experienceLevel, 'some');
+  assert.equal(profileResponse.data.onboardingComplete, true);
+  console.log('Live browser passed: broad tech interests and experience save to Supabase, skip onboarding, and survive refresh for the same guest.');
 } finally {
   await browser?.close();
   vite.kill();
