@@ -1,6 +1,6 @@
 # LearningCompanion implementation
 
-Read [PRD.md](PRD.md), [technical-design.md](docs/technical-design.md), and [build-plan.md](docs/build-plan.md) before editing. Implement only the requested stage and follow the fixed contracts. This is a separate application; do not modify ThinkTwice or reuse its configuration or secrets.
+Before editing, read the requested stage's section in [build-plan.md](docs/build-plan.md) and only the relevant sections of [PRD.md](PRD.md), [technical-design.md](docs/technical-design.md), and the design references. Follow any fixed contracts those sections reference; read further when needed to resolve a dependency or conflict. Do not reread unchanged sections already available in this chat. Implement only the requested stage. This is a separate application; do not modify ThinkTwice or reuse its configuration or secrets.
 
 Run the stage's completion checks. For application changes run `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build`; run the relevant browser checks with `npm run test:e2e`. Report external dependencies that are unavailable as unverified. Never replace a failed live capability with an unlabeled fixture.
 

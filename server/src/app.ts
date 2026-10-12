@@ -3,8 +3,10 @@ import express, { type ErrorRequestHandler } from 'express';
 import { type ApiErrorCode, type Health, type SuccessEnvelope, completeOnboardingSchema, errorEnvelopeSchema } from '@learning-companion/shared';
 import { createProfileService, type ProfileService } from './auth.js';
 import { ApiError } from './errors.js';
+import type { LocalRunsService } from './ai-runs.js';
 
-export function createApp(profileService: ProfileService = createProfileService()) {
+export function createApp(profileService: ProfileService = createProfileService(),
+  localRuns?: LocalRunsService) {
   const app = express();
   app.disable('x-powered-by');
   app.use((_req, res, next) => {
@@ -18,6 +20,23 @@ export function createApp(profileService: ProfileService = createProfileService(
     const response: SuccessEnvelope<Health> = { data: { status: 'ok', service: 'learning-companion-api' } };
     res.json(response);
   });
+  if (localRuns) {
+    app.get('/api/runs', async (_req, res) => {
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.json({ data: await localRuns.list() });
+    });
+    app.get('/api/runs/:id', async (req, res) => {
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.id)) {
+        throw new ApiError(404, 'NOT_FOUND', 'Resource not found.');
+      }
+      const run = await localRuns.get(req.params.id);
+      if (!run) throw new ApiError(404, 'NOT_FOUND', 'Resource not found.');
+      res.json({ data: run });
+    });
+  }
   const tokenFrom = (authorization: string | undefined) => {
     const token = /^Bearer ([A-Za-z0-9._~-]{1,4096})$/.exec(authorization ?? '')?.[1];
     if (!token) throw new ApiError(401, 'UNAUTHENTICATED', 'A bearer session is required.');

@@ -1,0 +1,11 @@
+# Stage 4 starter references
+
+`starter-sources.json` is the source manifest for the first four concepts. Each entry records its URL, publisher, reuse terms, source version, selected objective, and selected excerpts from the original documentation. The excerpts are relevant sections of the source pages with markup and links flattened to plain text. Their headings, section anchors, and canonical URLs remain available for citation. The source approval recorded here is curation for this project under the 9 October 2026 Stage 4 instruction; future AI output and answer keys have not been independently reviewed.
+
+Run `npm run content:check` to validate the manifest and objective coverage. Run `npm run content:seed` with the dedicated LearningCompanion `.env` to load approved sources, immutable content-hash revisions, chunks, and mappings into Supabase. Repeating the command is safe and checks the resulting row counts. A changed passage or version creates a new revision; existing historical revisions remain intact.
+
+MDN passages are selected from the linked MDN Web Docs articles. Attribution: Mozilla Contributors; the original pages are linked in the manifest. Markup and links were flattened and only relevant sections retained. MDN documentation is available under [CC BY-SA 2.5 or later](https://developer.mozilla.org/en-US/docs/MDN/Writing_guidelines/Attrib_copyright_license); any redistribution of the adapted passages must follow that license.
+
+PostgreSQL passages are based on the PostgreSQL 18 tutorial pages linked in the manifest. The [PostgreSQL License](https://www.postgresql.org/about/licence/) permits use, copying, modification, and distribution of documentation with its notice. Portions Copyright © 1996-2026, The PostgreSQL Global Development Group. Portions Copyright © 1994, The Regents of the University of California. Permission to use, copy, modify, and distribute this software and its documentation for any purpose, without fee, and without a written agreement is granted provided that the copyright notice and the license's permission and disclaimer paragraphs appear in all copies. The full license is linked above and applies to redistributed PostgreSQL material.
+
+No finished lesson, diagram, rubric, or assessment key is stored here. `content_available` stays false until the Stage 5/6 generation path is ready.

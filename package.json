@@ -25,7 +25,10 @@
     "db:remote:dry-run": "node scripts/db-remote.mjs dry-run",
     "db:remote:push": "node scripts/db-remote.mjs push",
     "db:live": "node scripts/db-live.mjs",
-    "guest:browser:live": "node scripts/guest-browser-live.mjs"
+    "guest:browser:live": "node scripts/guest-browser-live.mjs",
+    "content:check": "node scripts/content-check.mjs",
+    "content:seed": "node scripts/content-seed.mjs",
+    "ai:smoke": "npm run build -w @learning-companion/server && node scripts/ai-smoke.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.16",

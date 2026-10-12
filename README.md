@@ -1,6 +1,6 @@
 # LearningCompanion
 
-Stage 3 onboarding and home for the visual technology learning companion described in [PRD.md](PRD.md), [technical design](docs/technical-design.md), and [build plan](docs/build-plan.md).
+The visual technology learning companion described in [PRD.md](PRD.md), [technical design](docs/technical-design.md), and [build plan](docs/build-plan.md). The student-facing flow currently reaches Stage 3; Stage 4 references and the Stage 5 server-only AI smoke adapter are available for development checks.
 
 ## Local setup
 
@@ -16,6 +16,8 @@ Open http://127.0.0.1:5173. The API listens on http://127.0.0.1:3000; Vite proxi
 Copy `.env.example` to the root `.env` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from the dedicated Supabase project's **Connect** panel. Set `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` to the same values for API token verification. Set `DATABASE_URL` to the project's database connection string for migration and live checks; replace the password placeholder without its brackets and URL-encode reserved characters in the password. Enable **Allow anonymous sign-ins** in the project's Authentication settings. Restart the local dev processes after changing `.env`. Only the two `VITE_` fields enter the browser; `.env` is ignored.
 
 For database setup and verification, use `npm run db:remote:dry-run`, then `npm run db:remote:push` on the dedicated development target. Stage 3 requires `20261009000200_onboarding.sql` before onboarding can save. `npm run db:offline` replays migrations in embedded PostgreSQL without Docker. `npm run db:live` verifies two real guests, RLS, and private data boundaries; `npm run guest:browser:live` verifies that a browser refresh restores the same guest. The database URL is never printed by these scripts.
+
+For Stage 4/5 development, run `npm run content:check`, then `npm run content:seed` to load the approved chunks. Set `GEMINI_API_KEY` and `GEMINI_MODEL` in the server-only root `.env`. After applying the Stage 5 migration, explicitly run `npm run ai:smoke` to make a bounded live provider call for one starter objective. It uses approved active chunks from Supabase and saves the validated result in private operation tables. When the local backend is running, open [http://localhost:3000/api/runs](http://localhost:3000/api/runs) for JSON listing the 20 most recent successful smoke runs, newest first. Each entry has a unique ID, a DDMMYY completion date and 24-hour time in SGT, and a `url` for `GET /api/runs/:id`. Open that URL for the run's lesson, questions, sources, and SGT start/completion times. Answer keys and grading criteria are excluded; the smoke results are not student lessons or assessments. These local-only routes are not registered in production.
 
 ## Workspaces and verification
 

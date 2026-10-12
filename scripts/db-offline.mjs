@@ -7,6 +7,7 @@ const migration = await readFile(new URL('../supabase/migrations/20261008000100_
 const questionGuard = await readFile(new URL('../supabase/migrations/20261009000100_public_question_guard.sql', import.meta.url), 'utf8');
 const onboardingMigration = await readFile(new URL('../supabase/migrations/20261009000200_onboarding.sql', import.meta.url), 'utf8');
 const broadInterestsMigration = await readFile(new URL('../supabase/migrations/20261009000300_broad_tech_interests.sql', import.meta.url), 'utf8');
+const aiOperationsMigration = await readFile(new URL('../supabase/migrations/20261009000400_ai_operations.sql', import.meta.url), 'utf8');
 const seed = await readFile(new URL('../supabase/seed.sql', import.meta.url), 'utf8');
 const a = '00000000-0000-4000-8000-000000000901';
 const b = '00000000-0000-4000-8000-000000000902';
@@ -31,6 +32,7 @@ async function createDatabase() {
   await pg.exec(questionGuard);
   await pg.exec(onboardingMigration);
   await pg.exec(broadInterestsMigration);
+  await pg.exec(aiOperationsMigration);
   await pg.exec(seed);
   return pg;
 }

@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "selectionReview": "Curated for Stage 4 under the user's 2026-10-09 instruction to implement it. This is source selection, not independent review of future AI lessons or answer keys.",
+  "sources": [
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works",
+      "title": "How the web works",
+      "publisher": "MDN Web Docs",
+      "license": "CC BY-SA 2.5 or later",
+      "licenseUrl": "https://developer.mozilla.org/en-US/docs/MDN/Writing_guidelines/Attrib_copyright_license",
+      "permissionReview": "allowed",
+      "approvalBasis": "Public documentation, verified against the linked license; selected and fact-checked for the stated objective under the Stage 4 instruction.",
+      "sourceVersion": "accessed 2026-10-09",
+      "conceptSlug": "clients-and-servers",
+      "objectiveId": "client-server-roles",
+      "passages": [
+        { "heading": "Clients and servers", "sectionAnchor": "clients_and_servers", "text": "Clients are the typical web user's internet-connected devices (for example, your computer connected to your Wi-Fi, or your phone connected to your mobile network) and web-accessing software available on those devices (usually a web browser like Firefox or Chrome)." },
+        { "heading": "Clients and servers", "sectionAnchor": "clients_and_servers", "text": "Servers are computers that store webpages, sites, or apps. When a client wants to access a webpage, a copy of the webpage code is downloaded from the server to the client machine, where it is rendered by the browser and displayed to the user." }
+      ]
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview",
+      "title": "Overview of HTTP",
+      "publisher": "MDN Web Docs",
+      "license": "CC BY-SA 2.5 or later",
+      "licenseUrl": "https://developer.mozilla.org/en-US/docs/MDN/Writing_guidelines/Attrib_copyright_license",
+      "permissionReview": "allowed",
+      "approvalBasis": "Public documentation, verified against the linked license; selected and fact-checked for the stated objective under the Stage 4 instruction.",
+      "sourceVersion": "accessed 2026-10-09",
+      "conceptSlug": "http-requests-and-responses",
+      "objectiveId": "http-exchange",
+      "passages": [
+        { "heading": "Components of HTTP-based systems", "sectionAnchor": "components_of_http-based_systems", "text": "HTTP is a client-server protocol: requests are sent by one entity, the user-agent (or a proxy on behalf of it). Most of the time the user-agent is a Web browser, but it can be anything, for example, a robot that crawls the Web to populate and maintain a search engine index. Each individual request is sent to a server, which handles it and provides an answer called the response." },
+        { "heading": "HTTP Messages — Requests", "sectionAnchor": "requests", "text": "Requests consist of the following elements: An HTTP method, usually a verb like GET, POST, or a noun like OPTIONS or HEAD that defines the operation the client wants to perform. The path of the resource to fetch; the URL of the resource stripped from elements that are obvious from the context. The version of the HTTP protocol. Optional headers that convey additional information for the servers. A body, for some methods like POST." },
+        { "heading": "HTTP Messages — Responses", "sectionAnchor": "responses", "text": "Responses consist of the following elements: The version of the HTTP protocol they follow. A status code, indicating if the request was successful or not, and why. A status message, a non-authoritative short description of the status code. HTTP headers, like those for requests. Optionally, a body containing the fetched resource." }
+      ]
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Glossary/API",
+      "title": "API",
+      "publisher": "MDN Web Docs",
+      "license": "CC BY-SA 2.5 or later",
+      "licenseUrl": "https://developer.mozilla.org/en-US/docs/MDN/Writing_guidelines/Attrib_copyright_license",
+      "permissionReview": "allowed",
+      "approvalBasis": "Public documentation, verified against the linked license; selected and fact-checked for the stated objective under the Stage 4 instruction.",
+      "sourceVersion": "accessed 2026-10-09",
+      "conceptSlug": "what-an-api-does",
+      "objectiveId": "api-contract",
+      "passages": [
+        { "heading": "API", "sectionAnchor": "api", "text": "An API (Application Programming Interface) is a set of features and rules that exist inside a software program (the application) enabling interaction with it through software - as opposed to a human user interface. The API can be seen as a simple contract (the interface) between the application offering it and other items, such as third-party software or hardware." },
+        { "heading": "API", "sectionAnchor": "api", "text": "In Web development, an API is generally a set of code features (e.g., methods, properties, events, and URLs) that a developer can use in their apps for interacting with components of a user's web browser, other software/hardware on the user's computer, or third-party websites and services." }
+      ]
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/tutorial-table.html",
+      "title": "Creating a New Table",
+      "publisher": "PostgreSQL Global Development Group",
+      "license": "PostgreSQL License",
+      "licenseUrl": "https://www.postgresql.org/about/licence/",
+      "permissionReview": "allowed",
+      "approvalBasis": "Public documentation, verified against the linked license; selected and fact-checked for the stated objective under the Stage 4 instruction.",
+      "sourceVersion": "PostgreSQL 18; accessed 2026-10-09",
+      "conceptSlug": "tables-and-records",
+      "objectiveId": "table-record",
+      "passages": [
+        { "heading": "Creating a New Table", "sectionAnchor": "tutorial-table", "text": "You can create a new table by specifying the table name, along with all column names and their types: CREATE TABLE weather ( city varchar(80), temp_lo int, temp_hi int, prcp real, date date );" }
+      ]
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/tutorial-populate.html",
+      "title": "Populating a Table With Rows",
+      "publisher": "PostgreSQL Global Development Group",
+      "license": "PostgreSQL License",
+      "licenseUrl": "https://www.postgresql.org/about/licence/",
+      "permissionReview": "allowed",
+      "approvalBasis": "Public documentation, verified against the linked license; selected and fact-checked for the stated objective under the Stage 4 instruction.",
+      "sourceVersion": "PostgreSQL 18; accessed 2026-10-09",
+      "conceptSlug": "tables-and-records",
+      "objectiveId": "table-record",
+      "passages": [
+        { "heading": "Populating a Table With Rows", "sectionAnchor": "tutorial-populate", "text": "The INSERT statement is used to populate a table with rows: INSERT INTO weather VALUES ('San Francisco', 46, 50, 0.25, '1994-11-27'); The syntax used so far requires you to remember the order of the columns. An alternative syntax allows you to list the columns explicitly: INSERT INTO weather (city, temp_lo, temp_hi, prcp, date) VALUES ('San Francisco', 43, 57, 0.0, '1994-11-29');" }
+      ]
+    }
+  ]
+}
