@@ -59,19 +59,23 @@ export function createProfileService(
         global: { headers: { Authorization: `Bearer ${accessToken}` } },
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       });
-      const [catalogue, progress, sessions] = await Promise.all([
+      const [catalogue, progress, sessions, availability] = await Promise.all([
         scoped.from('concepts').select('id,slug,title,area,catalogue_order,content_available').eq('supported', true).order('catalogue_order'),
         scoped.from('user_concept_progress').select('concept_id,learning_status').eq('owner_id', profile.userId),
         scoped.from('lesson_sessions').select('id,concept_id,created_at,completed_at').eq('owner_id', profile.userId)
           .gte('created_at', new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString())
           .order('created_at', { ascending: false }).limit(2000),
+        scoped.rpc('available_lesson_concepts'),
       ]);
-      if (catalogue.error || progress.error || sessions.error) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not load your learning choices.');
+      if (catalogue.error || progress.error || sessions.error || availability.error) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not load your learning choices.');
+      const ready = new Set((availability.data ?? []) as string[]);
+      const generationReady = process.env.LESSON_GENERATION_ENABLED === 'true'
+        && Boolean(process.env.GEMINI_API_KEY?.trim() && process.env.GEMINI_MODEL?.trim() && process.env.DATABASE_URL?.trim());
       const statuses = new Map((progress.data ?? []).map(row => [row.concept_id as string, row.learning_status as string]));
       const concepts = (catalogue.data ?? []).map(row => ({
         id: row.id as string, slug: row.slug as string, title: row.title as string,
         area: row.area as string, order: row.catalogue_order as number,
-        contentAvailable: row.content_available as boolean,
+        contentAvailable: generationReady && ready.has(row.id as string),
         status: statuses.get(row.id as string) ?? 'not_assessed',
       }));
       const preferred = concepts.filter(concept => profile.interests.includes(concept.area as Profile['interests'][number]));

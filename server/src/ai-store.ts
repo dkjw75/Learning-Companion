@@ -8,7 +8,7 @@ function limit(name: string, fallback: number) {
   if (!Number.isInteger(parsed) || parsed < 1) throw new AiOperationError('CONFIGURATION', `${name} must be a positive integer.`);
   return parsed;
 }
-async function transaction<T>(pool: Pool, action: (db: PoolClient) => Promise<T>): Promise<T> {
+export async function transaction<T>(pool: Pool, action: (db: PoolClient) => Promise<T>): Promise<T> {
   const db = await pool.connect();
   try {
     await db.query('begin');
@@ -20,7 +20,7 @@ async function transaction<T>(pool: Pool, action: (db: PoolClient) => Promise<T>
     throw error;
   } finally { db.release(); }
 }
-async function reserveCall(db: PoolClient, ownerId: string, isAnonymous: boolean) {
+export async function reserveCall(db: PoolClient, ownerId: string, isAnonymous: boolean) {
   const day = (await db.query<{ day: string }>("select (now() at time zone 'Asia/Singapore')::date::text as day")).rows[0]?.day;
   if (!day) throw new AiOperationError('PROVIDER_FAILURE', 'Could not determine quota day.');
   const limits = new Map<string, number>([

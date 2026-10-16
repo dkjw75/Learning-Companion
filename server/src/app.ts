@@ -4,9 +4,12 @@ import { type ApiErrorCode, type Health, type SuccessEnvelope, completeOnboardin
 import { createProfileService, type ProfileService } from './auth.js';
 import { ApiError } from './errors.js';
 import type { LocalRunsService } from './ai-runs.js';
+import { AiOperationError } from './ai.js';
+import type { GenerationService } from './generation.js';
+import { z } from 'zod';
 
 export function createApp(profileService: ProfileService = createProfileService(),
-  localRuns?: LocalRunsService) {
+  localRuns?: LocalRunsService, generationService?: GenerationService) {
   const app = express();
   app.disable('x-powered-by');
   app.use((_req, res, next) => {
@@ -58,6 +61,25 @@ export function createApp(profileService: ProfileService = createProfileService(
     if (!profileService.getHome) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not load your learning choices.');
     res.json({ data: await profileService.getHome(token) });
   });
+  app.post('/api/sessions', async (req, res) => {
+      res.setHeader('Cache-Control', 'no-store');
+      const token = tokenFrom(req.get('Authorization'));
+      const parsed = z.strictObject({ conceptId: z.uuid(), mode: z.literal('learn'), requestId: z.uuid() }).safeParse(req.body);
+      if (!parsed.success) throw new ApiError(400, 'INVALID_INPUT', 'Choose an available topic to learn.');
+      if (!generationService) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Lessons are temporarily unavailable.');
+      const profile = await profileService.getProfile(token);
+      res.json({ data: await generationService.start(profile, parsed.data.conceptId, parsed.data.requestId) });
+  });
+  app.get('/api/sessions/:id', async (req, res) => {
+      res.setHeader('Cache-Control', 'no-store');
+      const token = tokenFrom(req.get('Authorization'));
+      if (!z.uuid().safeParse(req.params.id).success) throw new ApiError(404, 'NOT_FOUND', 'Lesson not found.');
+      if (!generationService) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Lessons are temporarily unavailable.');
+      const profile = await profileService.getProfile(token);
+      const session = await generationService.get(profile.userId, req.params.id);
+      if (!session) throw new ApiError(404, 'NOT_FOUND', 'Lesson not found.');
+      res.json({ data: session });
+  });
   app.use((_req, _res, next) => next(new ApiError(404, 'NOT_FOUND', 'Resource not found.')));
   const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _next) => {
     let status = 500;
@@ -65,6 +87,19 @@ export function createApp(profileService: ProfileService = createProfileService(
     let message = 'An unexpected error occurred.';
     if (error instanceof ApiError) {
       ({ status, code, message } = error);
+    } else if (error instanceof AiOperationError) {
+      const mapped = {
+        CONFIGURATION: [503, 'SERVICE_UNAVAILABLE', 'Lessons are temporarily unavailable.'],
+        QUOTA: [429, 'QUOTA_EXCEEDED', 'Your lesson limit has been reached for today.'],
+        IDEMPOTENCY_CONFLICT: [409, 'CONFLICT', 'This request was already used for another lesson.'],
+        PENDING: [409, 'CONFLICT', 'Your lesson is still being prepared.'],
+        PREVIOUS_FAILURE: [409, 'CONFLICT', 'Please try again with a new request.'],
+        REFUSAL: [503, 'PROVIDER_FAILURE', 'Could not prepare this lesson. Please try again.'],
+        TIMEOUT: [504, 'PROVIDER_TIMEOUT', 'Lesson preparation timed out. Please try again.'],
+        INVALID_OUTPUT: [503, 'SERVICE_UNAVAILABLE', 'Could not prepare a reliable lesson for this topic.'],
+        PROVIDER_FAILURE: [503, 'PROVIDER_FAILURE', 'Could not prepare this lesson. Please try again.'],
+      } as const;
+      [status, code, message] = mapped[error.code];
     } else if (typeof error === 'object' && error !== null && 'type' in error) {
       if (error.type === 'entity.parse.failed') {
         status = 400; code = 'INVALID_INPUT'; message = 'Request body must be valid JSON.';

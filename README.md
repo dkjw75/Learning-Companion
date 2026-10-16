@@ -1,6 +1,6 @@
 # LearningCompanion
 
-The visual technology learning companion described in [PRD.md](PRD.md), [technical design](docs/technical-design.md), and [build plan](docs/build-plan.md). The student-facing flow currently reaches Stage 3; Stage 4 references and the Stage 5 server-only AI smoke adapter are available for development checks.
+The visual technology learning companion described in [PRD.md](PRD.md), [technical design](docs/technical-design.md), and [build plan](docs/build-plan.md). The student-facing flow currently reaches Stage 3. Stage 6 adds backend lesson generation; the guided player is Stage 7.
 
 ## Local setup
 
@@ -18,6 +18,8 @@ Copy `.env.example` to the root `.env` and set `VITE_SUPABASE_URL` and `VITE_SUP
 For database setup and verification, use `npm run db:remote:dry-run`, then `npm run db:remote:push` on the dedicated development target. Stage 3 requires `20261009000200_onboarding.sql` before onboarding can save. `npm run db:offline` replays migrations in embedded PostgreSQL without Docker. `npm run db:live` verifies two real guests, RLS, and private data boundaries; `npm run guest:browser:live` verifies that a browser refresh restores the same guest. The database URL is never printed by these scripts.
 
 For Stage 4/5 development, run `npm run content:check`, then `npm run content:seed` to load the approved chunks. Set `GEMINI_API_KEY` and `GEMINI_MODEL` in the server-only root `.env`. After applying the Stage 5 migration, explicitly run `npm run ai:smoke` to make a bounded live provider call for one starter objective. It uses approved active chunks from Supabase and saves the validated result in private operation tables. When the local backend is running, open [http://localhost:3000/api/runs](http://localhost:3000/api/runs) for JSON listing the 20 most recent successful smoke runs, newest first. Each entry has a unique ID, a DDMMYY completion date and 24-hour time in SGT, and a `url` for `GET /api/runs/:id`. Open that URL for the run's lesson, questions, sources, and SGT start/completion times. Answer keys and grading criteria are excluded; the smoke results are not student lessons or assessments. These local-only routes are not registered in production.
+
+Stage 6 adds authenticated `POST /api/sessions` with `{ "conceptId": "<uuid>", "mode": "learn", "requestId": "<uuid>" }` and `GET /api/sessions/:id`. The first request retrieves active approved passages and generates one saved lesson plus its initial three-question assessment. Reusing the same request ID returns the saved result; GET resumes it by session ID. Both responses exclude private keys and feedback criteria. A failed generation returns a product-level error; retry with a new request ID. The current backend supports the four starter concepts only. Apply the Stage 6 migrations before using these routes. `npm run generation:storage:check` tests live database storage with an explicitly synthetic provider and removes its test sessions; `npm run generation:live` opts into real Gemini generation for the four starter concepts and prints only metadata. `LESSON_GENERATION_ENABLED` defaults to false so Home does not claim a usable lesson before live source evaluation and the Stage 7 player are ready.
 
 ## Workspaces and verification
 
@@ -42,7 +44,7 @@ Source modes are `source_grounded` and `unverified`; learning statuses are `not_
 
 Lesson schemas check four to six steps, at most two diagrams, at most eight nodes per diagram, rectangular tables, unique IDs, valid edge endpoints, highlights, and local citation references. Text is data, never generated markup. Server-side approval/retrieval checks must still validate actual citation provenance; structural schemas do not establish factual accuracy. Assessment grading, transactional progress projection, and round-family comparisons across history arrive in later stages.
 
-Stage 3 adds interest and experience selection, a skippable five-question starting check, verified onboarding save, and Home/Learn/Knowledge Map views backed by the catalogue and per-user progress. Diagnostic answers do not create concept progress. Lesson generation and full review remain later work.
+Stage 3 adds interest and experience selection, a skippable five-question starting check, verified onboarding save, and Home/Learn/Knowledge Map views backed by the catalogue and per-user progress. Diagnostic answers do not create concept progress. Stage 6 can generate saved lessons through the backend; the student lesson player and full review remain later work.
 
 ## Design and client state
 
