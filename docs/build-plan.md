@@ -12,17 +12,15 @@ If instructed to execute a single stage, stop after that stage and report its re
 
 When a stage is too large for one turn, finish one coherent subtask, record remaining work, and resume that same stage before advancing. Do not replace failed live features with unlabeled fixtures.
 
-This revision changes the earlier Stage 4-10 sequence: Stage 4 loads reference material; Stage 5 connects Gemini; Stage 6 generates lessons and questions; Stage 7 renders lessons; Stage 8 grades MCQs; Stage 9 displays the map; Stage 10 implements Review. Stages 1-3 and 11 onward retain their feature scope with updated dependencies. Historical implementation logs retain their original meaning; do not renumber completed records.
+This revision changes the earlier Stage 4-10 sequence: Stage 4 loads reference material; Stage 5 connects Gemini; Stage 6 generates lessons and questions; Stage 7 renders lessons; Stage 8 grades MCQs; Stage 9 displays the map; Stage 10 implements Review. Stages 1-3 and 11 onward retain their feature scope with updated dependencies.
 
 Suggested prompt for a single stage:
 
 > Read PRD.md, docs/technical-design.md, and docs/build-plan.md. Implement Stage N only. Inspect existing code first, follow the fixed contracts, run that stage's checks, and report changes, verification, limitations, and the next stage. Do not implement later stages.
 
-For every stage, record a short entry in `docs/implementations/implementation-log-StageN.X.md`: stage, changes, checks and outcomes, unresolved dependencies, and next action. N refers to the stage, X refers to the ith time called to run this particular stage. Create that log during implementation, not as a claim that work has already been done.
-
 ### Frontend design inputs
 
-Use React, Vite, Tailwind CSS 4, shadcn/ui, and selected 21st.dev component source. Keep approved Stitch design rules, screenshots, and optional code/assets under `design/`, with a manifest identifying the approved versions and selected component URLs. Follow these references for appearance and the PRD for behaviour. If references have not been supplied, use the technical design's layout defaults and label the styling provisional in the implementation log; do not claim a Stitch design has been approved.
+Use React, Vite, Tailwind CSS 4, shadcn/ui, and selected 21st.dev component source. Keep approved Stitch design rules, screenshots, and optional code/assets under `design/`, with a manifest identifying the approved versions and selected component URLs. Follow these references for appearance and the PRD for behaviour. If references have not been supplied, use the technical design's layout defaults and report that the styling is provisional; do not claim a Stitch design has been approved.
 
 At each stage that adds a screen, adapt only the relevant approved components, check their licence and dependencies, apply shared theme variables, and verify the resulting desktop/mobile layout. This work belongs to that screen's stage rather than a separate all-at-once redesign.
 
@@ -125,6 +123,7 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 - Implement flow, relationship, and table renderers with controlled layout for Gemini's validated diagram data.
 - Add step navigation, component selection, captions, source links, generation loading/error/retry UI, and session-position persistence.
 - Load the saved generated lessons from Stage 6; never call Gemini directly from the browser.
+- Require one running example per lesson, concrete diagram values, directly connected labelled arrows, and per-step node/edge or table-row highlights. Apply the shared diagram contract and renderer to every future concept and both source modes; follow the diagram standard in `technical-design.md` and `design/README.md`.
 - Implement mobile layout and keyboard access. Apply the approved Lesson design and selected components while retaining application-controlled diagrams and state.
 
 **Done when:** all four generated starter lessons render, refresh resumes the correct step without regeneration, every highlight resolves, and labels cannot execute markup or code.

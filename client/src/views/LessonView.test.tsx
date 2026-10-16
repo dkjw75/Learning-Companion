@@ -20,23 +20,24 @@ const session = {
   lesson: {
     id: '00000000-0000-4000-8000-000000000201', conceptId: '00000000-0000-4000-8000-000000000101',
     title: '<img src=x onerror=alert(1)>', sourceMode: 'source_grounded', contentVersion: 'v1',
+    runningExample: 'A student opens /courses and receives the course page in their browser.',
     objectives: [{ id: 'roles', description: 'Roles' }],
     citationChunkIds: ['00000000-0000-4000-8000-000000000501'],
     diagrams: [
       { id: 'flow', type: 'flow', title: 'Flow', nodes: [
-        { id: 'client', label: '<script>alert(1)</script>', description: 'Sends a request', icon: 'api' },
-        { id: 'server', label: 'Server', description: 'Responds' },
+        { id: 'client', label: '<script>alert(1)</script>', description: 'Sends a request', example: 'GET /courses', icon: 'api' },
+        { id: 'server', label: 'Server', description: 'Responds', example: 'Courses page' },
       ], edges: [{ id: 'request', from: 'client', to: 'server', label: 'Request' }] },
       { id: 'relationship', type: 'relationship', title: 'Relations', nodes: [
-        { id: 'table-a', label: 'Customers', description: 'Customer records' },
-        { id: 'table-b', label: 'Orders', description: 'Order records' },
+        { id: 'table-a', label: 'Customers', description: 'Customer records', example: 'id: 42\nname: Ada' },
+        { id: 'table-b', label: 'Orders', description: 'Order records', example: 'order: 1042\ncustomer_id: 42' },
       ], edges: [{ id: 'owns', from: 'table-a', to: 'table-b', label: 'Places' }] },
     ],
     steps: [
-      { id: 'one', heading: 'Start', caption: 'A client asks.', ...depth, diagramId: 'flow', highlightNodeIds: ['client'], highlightEdgeIds: ['request'], citationChunkIds: ['00000000-0000-4000-8000-000000000501'] },
-      { id: 'two', heading: 'Connect', caption: 'Customers place orders.', ...depth, diagramId: 'relationship', highlightNodeIds: ['table-a'], highlightEdgeIds: ['owns'], citationChunkIds: ['00000000-0000-4000-8000-000000000501'] },
-      { id: 'three', heading: 'Tabulate', caption: 'Data has cells.', ...depth, diagramId: 'relationship', highlightNodeIds: [], highlightEdgeIds: [], citationChunkIds: ['00000000-0000-4000-8000-000000000501'] },
-      { id: 'four', heading: 'Finish', caption: 'Done.', ...depth, diagramId: 'flow', highlightNodeIds: [], highlightEdgeIds: [], citationChunkIds: ['00000000-0000-4000-8000-000000000501'] },
+      { id: 'one', heading: 'Start', caption: 'A client asks.', ...depth, diagramId: 'flow', highlightNodeIds: ['client'], highlightRowIndexes: [], highlightEdgeIds: ['request'], citationChunkIds: ['00000000-0000-4000-8000-000000000501'] },
+      { id: 'two', heading: 'Connect', caption: 'Customers place orders.', ...depth, diagramId: 'relationship', highlightNodeIds: ['table-a'], highlightRowIndexes: [], highlightEdgeIds: ['owns'], citationChunkIds: ['00000000-0000-4000-8000-000000000501'] },
+      { id: 'three', heading: 'Tabulate', caption: 'Data has cells.', ...depth, diagramId: 'relationship', highlightNodeIds: ['client'], highlightRowIndexes: [], highlightEdgeIds: [], citationChunkIds: ['00000000-0000-4000-8000-000000000501'] },
+      { id: 'four', heading: 'Finish', caption: 'Done.', ...depth, diagramId: 'flow', highlightNodeIds: ['client'], highlightRowIndexes: [], highlightEdgeIds: [], citationChunkIds: ['00000000-0000-4000-8000-000000000501'] },
     ],
   },
   round: { id: '00000000-0000-4000-8000-000000000301', sessionId: '00000000-0000-4000-8000-000000000201', kind: 'initial', sourceMode: 'source_grounded', assessmentBasis: 'ai_generated_key', questions: [] },
@@ -61,6 +62,9 @@ describe('guided lesson player', () => {
     expect(document.querySelector('script')).toBeNull();
     const client = screen.getAllByRole('button', { name: /<script>alert\(1\)<\/script>/ })[0]!;
     expect(client).toHaveClass('highlight');
+    expect(screen.getByText(session.lesson.runningExample)).toBeVisible();
+    expect(screen.getByText('GET /courses')).toBeVisible();
+    expect(document.querySelector('path[data-edge-id="request"]')).toHaveClass('highlight');
     expect(screen.getByRole('button', { name: 'Server: Responds' })).toHaveClass('inactive');
     expect(client.querySelector('svg.lucide-network')).not.toBeNull();
     await user.click(client);
@@ -78,11 +82,12 @@ describe('guided lesson player', () => {
       table: { columns: ['Key', 'Value'], rows: [['id', '1']] } };
     fetchLesson.mockResolvedValue({ ...session, currentStep: 2, lesson: { ...session.lesson,
       diagrams: [session.lesson.diagrams[0], table],
-      steps: session.lesson.steps.map((step, index) => index === 2 ? { ...step, diagramId: 'table' } : { ...step, diagramId: 'flow' }),
+      steps: session.lesson.steps.map((step, index) => index === 2 ? { ...step, diagramId: 'table', highlightNodeIds: [], highlightEdgeIds: [], highlightRowIndexes: [0] } : { ...step, diagramId: 'flow' }),
     } });
     showLesson();
     expect(await screen.findByRole('heading', { name: 'Tabulate' })).toBeInTheDocument();
     expect(screen.getByRole('table')).toHaveTextContent('id');
+    expect(screen.getByRole('table').querySelector('tbody tr')).toHaveClass('highlight');
     expect(saveLessonStep).not.toHaveBeenCalled();
   });
 });

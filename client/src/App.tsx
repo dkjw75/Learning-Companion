@@ -23,7 +23,7 @@ export function App() {
         {inProduct && <span className="profile-badge"><CircleUserRound size={19} /> {profile?.isAnonymous ? 'Guest' : 'My learning'}</span>}
       </nav>
     </header>
-    <main id="main-content" className="app-main" tabIndex={-1}>
+    <main id="main-content" className="app-main" tabIndex={-1} data-reduced-motion={profile?.reducedMotion || undefined}>
       <Routes>
         <Route path="/" element={<FoundationView />} />
         <Route path="/onboarding" element={status === 'loading' ? <p role="status">Loading…</p> : session && profile ? <OnboardingView /> : <Navigate to="/" replace />} />

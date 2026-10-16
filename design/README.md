@@ -37,8 +37,12 @@ No onboarding screenshot, results/map-update screenshot, or mobile layout was su
 
 ## Design handoff readiness
 
+### Lesson diagram standard — every topic and source mode
+
+Use `lesson-with-tutor.png` as the diagram reference: rich component cards showing actual example values, directly connected labelled arrows, navy surfaces, cyan current-step emphasis, complementary part colours and restrained directional motion. Each lesson carries one topic-appropriate running example through its diagram and explanatory steps. Tables show concrete records with row emphasis; relationship diagrams show specific linked entities. Generic definition boxes do not meet this standard. The application owns the layout, colour, icons, interaction and motion; Gemini returns validated data only. All future supported and unsupported lesson paths must use the shared `lessonSchema` and `LessonDiagram` renderer. Preserve the unverified-source label and reduced-motion experience. The tutor panel is implemented in its own planned stage.
+
 The core handoff is available: DESIGN.md, five screenshots, component references, the manifest, and the foundation licence notice. Frontend work can use these now. Optional Stitch code/assets can be saved under `design/exports/`; these are not a prerequisite. A project/version identifier has not been supplied, and explicit approval metadata remains unset rather than being invented.
 
 Onboarding, results/map-update, and mobile reference screens would add detail but do not block Stage 2's database/auth work. Adapt the supplied theme and selected onboarding component when implementing those views.
 
-The project .gitignore excludes `docs/implementations/` and `design/screenshots/` as requested. These files remain on this computer. Other checkouts and remote agents will need screenshots supplied separately; the tracked design rules, manifest, and component links do not embed image contents.
+The project .gitignore excludes `design/screenshots/` as requested. These files remain on this computer. Other checkouts and remote agents will need screenshots supplied separately; the tracked design rules, manifest, and component links do not embed image contents.

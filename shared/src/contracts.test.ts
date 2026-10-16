@@ -9,12 +9,13 @@ const uuid = '00000000-0000-4000-8000-000000000001';
 const otherUuid = '00000000-0000-4000-8000-000000000002';
 const diagram = {
   id: 'flow', type: 'flow' as const, title: 'Fixture diagram',
-  nodes: [{ id: 'client', label: 'Client', description: 'Sends a request.' }, { id: 'server', label: 'Server', description: 'Returns a response.' }],
+  nodes: [{ id: 'client', label: 'Client', description: 'Sends a request.', example: 'Open /courses' }, { id: 'server', label: 'Server', description: 'Returns a response.', example: 'Courses page' }],
   edges: [{ id: 'request', from: 'client', to: 'server', label: 'Request' }],
 };
 function lesson() {
   return {
     id: uuid, conceptId: otherUuid, title: 'Contract fixture', sourceMode: 'source_grounded' as const, contentVersion: 'fixture-v1',
+    runningExample: 'A student opens /courses and receives the course page in their browser.',
     objectives: [{ id: 'objective-1', description: 'Recognise a request.' }], citationChunkIds: [uuid], diagrams: [structuredClone(diagram)],
     steps: Array.from({ length: 4 }, (_, index) => ({
       id: `step-${index}`, heading: 'Test step', caption: 'A client sends a request.',
@@ -22,7 +23,7 @@ function lesson() {
       workedExample: 'A browser asks a server for its home page. The server returns the page for display.',
       commonMistake: 'Mistake: the server starts this exchange. Correction: the client sends the request first.',
       diagramId: 'flow',
-      highlightNodeIds: ['client'], highlightEdgeIds: ['request'], citationChunkIds: [uuid],
+      highlightNodeIds: ['client'], highlightEdgeIds: ['request'], highlightRowIndexes: [] as number[], citationChunkIds: [uuid],
     })),
   };
 }
@@ -60,7 +61,12 @@ describe('bounded lesson contracts', () => {
     ['missing grounded citation', (value: ReturnType<typeof lesson>) => { value.steps[0]!.citationChunkIds = []; }],
     ['too few steps', (value: ReturnType<typeof lesson>) => { value.steps.pop(); }],
     ['too many diagrams', (value: ReturnType<typeof lesson>) => { value.diagrams.push({ ...diagram, id: 'second' }, { ...diagram, id: 'third' }); }],
-    ['too many nodes', (value: ReturnType<typeof lesson>) => { value.diagrams[0]!.nodes = Array.from({ length: 9 }, (_, i) => ({ id: `n-${i}`, label: 'N', description: 'Node' })); }],
+    ['too many nodes', (value: ReturnType<typeof lesson>) => { value.diagrams[0]!.nodes = Array.from({ length: 9 }, (_, i) => ({ id: `n-${i}`, label: 'N', description: 'Node', example: 'Record 42' })); }],
+    ['empty running example', (value: ReturnType<typeof lesson>) => { value.runningExample = ''; }],
+    ['empty node example', (value: ReturnType<typeof lesson>) => { value.diagrams[0]!.nodes[0]!.example = ''; }],
+    ['missing connections', (value: ReturnType<typeof lesson>) => { value.diagrams[0]!.edges = []; }],
+    ['no highlighted part', (value: ReturnType<typeof lesson>) => { value.steps[0]!.highlightNodeIds = []; value.steps[0]!.highlightEdgeIds = []; }],
+    ['row highlight on flow', (value: ReturnType<typeof lesson>) => { value.steps[0]!.highlightRowIndexes = [0]; }],
     ['long caption', (value: ReturnType<typeof lesson>) => { value.steps[0]!.caption = Array.from({ length: 101 }, () => 'word').join(' '); }],
     ['missing worked example', (value: ReturnType<typeof lesson>) => { delete (value.steps[0] as Partial<typeof value.steps[number]>).workedExample; }],
   ])('rejects %s', (_name, mutate) => {
@@ -70,6 +76,13 @@ describe('bounded lesson contracts', () => {
   it('rejects ragged tables and provider-controlled layout', () => {
     expect(diagramSchema.safeParse({ ...diagram, type: 'table', table: { columns: ['A', 'B'], rows: [['1']] } }).success).toBe(false);
     expect(diagramSchema.safeParse({ ...diagram, x: 12 }).success).toBe(false);
+  });
+  it('requires the same example standard for unverified topics outside the catalogue', () => {
+    const value = { ...lesson(), conceptId: crypto.randomUUID(), sourceMode: 'unverified', citationChunkIds: [],
+      steps: lesson().steps.map(step => ({ ...step, citationChunkIds: [] })) };
+    expect(lessonSchema.safeParse(value).success).toBe(true);
+    expect(lessonSchema.safeParse({ ...value, runningExample: undefined }).success).toBe(false);
+    expect(lessonSchema.safeParse({ ...value, diagrams: [{ ...diagram, nodes: diagram.nodes.map(node => ({ ...node, example: undefined })) }] }).success).toBe(false);
   });
 });
 

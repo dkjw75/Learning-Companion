@@ -63,6 +63,7 @@ export function createProfileService(
         scoped.from('concepts').select('id,slug,title,area,catalogue_order,content_available').eq('supported', true).order('catalogue_order'),
         scoped.from('user_concept_progress').select('concept_id,learning_status').eq('owner_id', profile.userId),
         scoped.from('lesson_sessions').select('id,concept_id,created_at,completed_at').eq('owner_id', profile.userId)
+          .eq('generation_state', 'ready').not('lesson->>runningExample', 'is', null)
           .order('created_at', { ascending: false }).limit(2000),
         scoped.rpc('available_lesson_concepts'),
       ]);

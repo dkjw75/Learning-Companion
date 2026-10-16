@@ -21,6 +21,5 @@ Thumbs.db
 credentials*.json
 service-account*.json
 
-# Local implementation records and design reference screenshots.
-/docs/implementations/
+# Local design reference screenshots.
 /design/screenshots/

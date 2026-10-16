@@ -13,9 +13,10 @@ const input: GenerationInput = { conceptId, title: 'Clients and servers',
   interests: ['web_communication'], experienceLevel: 'new', diagnosticEvidence: [] };
 const generated = {
   title: 'Clients and servers',
+  runningExample: 'A student opens /courses in a browser and the course site returns the page.',
   diagrams: [{ id: 'main', title: 'Web exchange', type: 'flow',
-    nodes: [{ id: 'client', label: 'Client', description: 'Requests a page.' },
-      { id: 'server', label: 'Server', description: 'Responds.' }],
+    nodes: [{ id: 'client', label: 'Client', description: 'Requests a page.', example: 'Open /courses' },
+      { id: 'server', label: 'Server', description: 'Responds.', example: 'Course site\nReturns the courses page' }],
     edges: [{ id: 'request', from: 'client', to: 'server', label: 'Requests' }] }],
   steps: Array.from({ length: 4 }, (_, i) => ({ id: `step${i}`, heading: `Step ${i}`,
     caption: 'A client requests a page from a server.',
@@ -23,7 +24,7 @@ const generated = {
     workedExample: 'A browser asks a server for its home page. The server sends the page, and the browser displays it.',
     commonMistake: 'Mistake: the server starts this request. Correction: the client asks for the page first.',
     diagramId: 'main',
-    highlightNodeIds: ['client'], highlightEdgeIds: ['request'], citationChunkIds: [chunkId] })),
+    highlightNodeIds: ['client'], highlightEdgeIds: ['request'], highlightRowIndexes: [], citationChunkIds: [chunkId] })),
   questions: Array.from({ length: 3 }, (_, i) => ({ id: `q${i}`, familyId: `family${i}`,
     prompt: `Question ${i}?`, kind: i === 2 ? 'application' : 'recall',
     objectiveIds: ['client-server-roles'], citationChunkIds: [chunkId],
@@ -63,6 +64,8 @@ describe('Stage 6 generated lessons', () => {
     expect(repair).toHaveBeenCalledTimes(1);
     expect(provider.mock.calls[0]?.[0]).toContain('web_communication');
     expect(provider.mock.calls[0]?.[0]).toContain(chunkId);
+    expect(provider.mock.calls[0]?.[0]).toContain('ONE concrete runningExample');
+    expect(provider.mock.calls[0]?.[0]).toContain('each workedExample must walk through that same scenario');
   });
 
   it('does not retry a provider timeout or accept a second invalid response', async () => {

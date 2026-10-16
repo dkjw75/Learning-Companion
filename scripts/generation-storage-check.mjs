@@ -19,10 +19,10 @@ const provider = async prompt => {
   const input = JSON.parse(prompt.split('INPUT DATA:\n')[1]);
   const citation = input.passages[0].id;
   const objective = input.objectives[0].id;
-  return JSON.stringify({ title: `${input.title} test lesson`,
+  return JSON.stringify({ runningExample: 'Synthetic storage check: record 42 moves from the starting item to the ending item.', title: `${input.title} test lesson`,
     diagrams: [{ id: 'diagram', title: 'Concept exchange', type: 'flow',
-      nodes: [{ id: 'start', label: 'Start', description: 'The starting item.' },
-        { id: 'end', label: 'End', description: 'The ending item.' }],
+      nodes: [{ id: 'start', label: 'Start', description: 'The starting item.', example: 'Record 42: input' },
+        { id: 'end', label: 'End', description: 'The ending item.', example: 'Record 42: output' }],
       edges: [{ id: 'connection', from: 'start', to: 'end', label: 'Connects' }] }],
     steps: Array.from({ length: 4 }, (_, i) => ({ id: `step${i}`, heading: `Step ${i + 1}`,
       caption: `Synthetic storage check for ${input.title}.`,
@@ -30,7 +30,7 @@ const provider = async prompt => {
       workedExample: `This synthetic worked example checks that ${input.title} has a separate example stored with the lesson.`,
       commonMistake: `Mistake: this text is a real lesson. Correction: it is only a synthetic storage check.`,
       diagramId: 'diagram',
-      highlightNodeIds: ['start'], highlightEdgeIds: ['connection'], citationChunkIds: [citation] })),
+      highlightRowIndexes: [], highlightNodeIds: ['start'], highlightEdgeIds: ['connection'], citationChunkIds: [citation] })),
     questions: Array.from({ length: 3 }, (_, i) => ({ id: `q${i}`, familyId: `family${i}`,
       prompt: `Synthetic question ${i + 1}?`, kind: i === 2 ? 'application' : 'recall',
       objectiveIds: [objective], citationChunkIds: [citation],

@@ -18,5 +18,5 @@
     { "id": "contribution-skyline", "author": "kedhareswer", "url": "https://21st.dev/?preview=%2F%40kedhareswer%2Fcomponents%2Fcontribution-skyline", "purpose": "contributions/streaks in home page", "sourceReviewStatus": "pending", "installed": false },
     { "id": "flow-button", "author": "xubohuah", "url": "https://21st.dev/?qt=button&preview=%2F%40xubohuah%2Fcomponents%2Fflow-button", "purpose": "button", "sourceReviewStatus": "pending", "installed": false }
   ],
-  "notes": "The user supplied DESIGN.md and five screenshot references. Screen code exports, a Stitch project/version identifier, and mobile screenshots have not been supplied. Follow design/README.md and the PRD when illustrative screenshot/design copy differs from product rules. Screenshots and implementation logs are locally available but Git-ignored. The existing shadcn foundation provenance is preserved in component-references.md."
+  "notes": "The user supplied DESIGN.md and five screenshot references. Screen code exports, a Stitch project/version identifier, and mobile screenshots have not been supplied. Follow design/README.md and the PRD when illustrative screenshot/design copy differs from product rules. Screenshots are locally available but Git-ignored. The existing shadcn foundation provenance is preserved in component-references.md."
 }

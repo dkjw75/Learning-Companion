@@ -17,7 +17,7 @@ try {
     const chunks = await db.query(`select ch.id,ch.body from public.source_chunks ch
       where ch.id=any($1::uuid[])`, [row.citation_snapshot.map(item => item.id)]);
     console.log(JSON.stringify({ concept: row.slug, sessionId: row.id,
-      lesson: { title: row.lesson.title, diagrams: row.lesson.diagrams,
+      lesson: { title: row.lesson.title, runningExample: row.lesson.runningExample, diagrams: row.lesson.diagrams,
         steps: row.lesson.steps.map(step => ({ heading: step.heading, caption: step.caption,
           explanation: step.explanation, workedExample: step.workedExample, commonMistake: step.commonMistake,
           citationChunkIds: step.citationChunkIds })) },

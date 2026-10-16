@@ -96,7 +96,7 @@ type DiagramSpec = {
   id: string;
   type: 'flow' | 'relationship' | 'table';
   title: string;
-  nodes: Array<{ id: string; label: string; description: string }>;
+  nodes: Array<{ id: string; label: string; description: string; example: string; icon?: DiagramIcon }>;
   edges: Array<{ id: string; from: string; to: string; label: string }>;
   table?: { columns: string[]; rows: string[][] };
 };
@@ -108,11 +108,16 @@ type LessonStep = {
   diagramId: string;
   highlightNodeIds: string[];
   highlightEdgeIds: string[];
+  highlightRowIndexes: number[];
   citationChunkIds: string[];
 };
 ```
 
 Each generated lesson contains four to six steps, at most two diagrams, no more than eight nodes per diagram, and captions of at most 100 words per step. Validate unique IDs, edge endpoints, rectangular table rows, and every highlight/citation reference. Layout coordinates come from the renderer, not Gemini. Render labels as text; never interpret them as HTML, CSS, SVG markup, or JavaScript.
+
+Every lesson also requires one `runningExample` (30-300 characters), shared by its diagrams and step explanations. Pick a concrete situation appropriate to the topic, with illustrative names, values, requests, records, code or states. Every node requires a visible `example` (at most 200 characters); tables require nonempty concrete rows. Flow and relationship diagrams require at least two connected nodes and one directed, labelled edge. Every step must highlight a valid node/edge, or at least one zero-based table row. Keep labels compact (nodes 50 characters, edges 60). The generation prompt asks all worked examples to follow the same situation, while the application controls the visual standard: navy canvas, coloured cards, inset example values, actual SVG connectors, clickable labels, current-step emphasis, and reduced-motion-safe flow animation. The desktop diagram sits above the step explanation. This is a shared contract for every concept ID and both source modes, including future private unsupported topics; no future generation endpoint may bypass `lessonSchema` or introduce a weaker diagram format. Unsupported-topic generation remains Stage 13 scope.
+
+Structural validation enforces the data and references, not factual accuracy or whether an example teaches well. Review representative real outputs against their passages and inspect the rendered diagrams. Older snapshots without this contract remain stored but are excluded from Resume so students can start a new lesson; never invent example data for them.
 
 For supported concepts, Gemini generates diagram data, captions, a short explanation, a worked example, and a corrected common mistake for every step from approved source passages and curated learning objectives. The React renderer controls layout, reveals the extra step details on demand, and accepts only the validated diagram contract. Require source references for instructional relationships and evaluate representative diagrams against the passages; generated diagram structure is not automatically reviewed. Do not let generation rewrite reviewed catalogue prerequisites. An existing independently reviewed diagram may be reused as an optional base. Unsupported topics use the same structural validation and retain the unverified label.
 
