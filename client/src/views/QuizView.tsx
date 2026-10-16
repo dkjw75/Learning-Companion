@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router';
 import { learningStatusLabels } from '@learning-companion/shared';
 import { ButtonUi } from '@/components/ui/button-ui';
-import { fetchLesson, requestHint, submitAnswer, type SavedLessonSession } from '@/lib/sessions';
+import { LessonStepRail } from '@/components/LessonStepRail';
+import { fetchLesson, requestHint, saveLessonStep, submitAnswer, type SavedLessonSession } from '@/lib/sessions';
 
 export function QuizView() {
   const { sessionId } = useParams();
@@ -14,6 +15,8 @@ export function QuizView() {
   const [pending, setPending] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [hintError, setHintError] = useState<string | null>(null);
+  const [stepError, setStepError] = useState(false);
+  const [movingStep, setMovingStep] = useState(false);
   const requests = useRef<Record<string, { answer: string; id: string }>>({});
   const hintRequests = useRef<Record<string, string>>({});
   const { data, isLoading, isError, refetch } = useQuery({
@@ -62,11 +65,24 @@ export function QuizView() {
     finally { setPending(null); }
   }
 
+  async function openStep(position: number) {
+    setMovingStep(true); setStepError(false);
+    try {
+      const currentStep = await saveLessonStep(data!.id, position);
+      queryClient.setQueryData<SavedLessonSession>(['lesson', sessionId], old => old && ({ ...old, currentStep }));
+      navigate(`/learn/${data!.id}`);
+    } catch { setStepError(true); }
+    finally { setMovingStep(false); }
+  }
+
   return <article className="quiz-view">
+    <LessonStepRail sessionId={data.id} steps={data.lesson.steps} activeStep={null} disabled={movingStep}
+      onStepSelect={position => { void openStep(position); }} />
     <Link className="lesson-back" to={`/learn/${data.id}`}>← Back to lesson</Link>
     <header className="lesson-heading"><span className="eyebrow">UNDERSTANDING CHECK</span><h1>{data.lesson.title}</h1>
       <p>Three questions · {data.round.assessmentBasis === 'ai_generated_key' ? 'AI-assessed' : 'Reviewed assessment'}
         {data.round.sourceMode === 'unverified' && ' · Unverified source'}</p></header>
+    {stepError && <p role="alert" className="form-error">Could not open that lesson step. Please try again.</p>}
     {result && <section className="quiz-results" aria-labelledby="quiz-results-title" role="status">
       <h2 id="quiz-results-title">Check complete</h2>
       <p>Learning status: {learningStatusLabels[result.previousStatus]} → {learningStatusLabels[result.currentStatus]}</p>

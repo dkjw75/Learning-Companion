@@ -60,7 +60,7 @@ export function createProfileService(
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       });
       const [catalogue, progress, sessions, availability] = await Promise.all([
-        scoped.from('concepts').select('id,slug,title,area,catalogue_order,content_available').eq('supported', true).order('catalogue_order'),
+        scoped.from('concepts').select('id,slug,title,area,objectives,catalogue_order,content_available').eq('supported', true).order('catalogue_order'),
         scoped.from('user_concept_progress').select('concept_id,learning_status').eq('owner_id', profile.userId),
         scoped.from('lesson_sessions').select('id,concept_id,created_at,completed_at').eq('owner_id', profile.userId)
           .eq('generation_state', 'ready').not('lesson->>runningExample', 'is', null)
@@ -68,6 +68,19 @@ export function createProfileService(
         scoped.rpc('available_lesson_concepts'),
       ]);
       if (catalogue.error || progress.error || sessions.error || availability.error) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not load your learning choices.');
+      const conceptIds = (catalogue.data ?? []).map(row => row.id as string);
+      const sourceLinks = conceptIds.length ? await scoped.from('sources')
+        .select('title,canonical_url,source_concepts!inner(concept_id)')
+        .in('source_concepts.concept_id', conceptIds) : { data: [], error: null };
+      if (sourceLinks.error) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not load topic references.');
+      const citationsByConcept = new Map<string, { title: string; url: string }[]>();
+      for (const row of sourceLinks.data ?? []) {
+        for (const link of row.source_concepts as { concept_id: string }[]) {
+          const links = citationsByConcept.get(link.concept_id) ?? [];
+          links.push({ title: row.title as string, url: row.canonical_url as string });
+          citationsByConcept.set(link.concept_id, links);
+        }
+      }
       const ready = new Set((availability.data ?? []) as string[]);
       const generationReady = Boolean(process.env.GEMINI_API_KEY?.trim() && process.env.GEMINI_MODEL?.trim() && process.env.DATABASE_URL?.trim());
       const statuses = new Map((progress.data ?? []).map(row => [row.concept_id as string, row.learning_status as string]));
@@ -78,6 +91,9 @@ export function createProfileService(
       }
       const concepts = (catalogue.data ?? []).map(row => ({
         id: row.id as string, slug: row.slug as string, title: row.title as string,
+        description: (row.objectives as { description: string }[])[0]?.description ?? null,
+        objectives: (row.objectives as { description: string }[]).map(objective => objective.description),
+        citations: citationsByConcept.get(row.id as string) ?? [],
         area: row.area as string, order: row.catalogue_order as number,
         contentAvailable: generationReady && ready.has(row.id as string),
         sessionId: latestByConcept.get(row.id as string)?.id ?? null,

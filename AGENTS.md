@@ -6,6 +6,8 @@ Keep context and output small: use targeted searches and read only the file sect
 
 Keep testing minimal for each turn: run only the smallest relevant check, usually one focused test or typecheck. Do not run full test suites, lint, build, or E2E by default; use them only when a concrete risk calls for them or the user asks. Do not add broad tests or repeat passing checks without a reason. The user handles manual browser testing. Report external dependencies that are unavailable as unverified. Never replace a failed live capability with an unlabeled fixture.
 
+Treat LearningCompanion as a desktop app. Do not spend implementation or testing effort on phone or other small-screen layouts unless the user explicitly asks.
+
 Do not create or update implementation logs, including `docs/implementations/implementation-log-StageN.X.md`, unless the user explicitly requests them. Report changes, checks, outcomes, and remaining dependencies briefly in the final response instead. This overrides earlier requirements to log each invocation.
 
 Keep credentials out of source, examples, browser state, and test output. Public assessment DTOs exclude answer keys and private rubrics. Only the server computes learning status; source status is independent of assessment outcomes.

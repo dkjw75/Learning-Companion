@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
-import { ButtonUi, ButtonUiLink } from '@/components/ui/button-ui';
+import { ButtonUi } from '@/components/ui/button-ui';
 import { LessonDiagram } from '@/components/LessonDiagram';
+import { LessonStepRail } from '@/components/LessonStepRail';
 import { fetchLesson, saveLessonStep } from '@/lib/sessions';
 
 export function LessonView() {
@@ -27,12 +28,11 @@ export function LessonView() {
     finally { setSaving(false); }
   }
   return <article className="lesson-view">
+    <LessonStepRail sessionId={data.id} steps={data.lesson.steps} activeStep={index} disabled={saving}
+      onStepSelect={position => { void move(position); }} />
     <Link className="lesson-back" to="/learn">← All topics</Link>
     <header className="lesson-heading"><span className="eyebrow">GUIDED LESSON</span><h1>{data.lesson.title}</h1>
-      <p>Step {index + 1} of {data.lesson.steps.length}{data.lesson.sourceMode === 'unverified' && ' · Unverified source'}</p></header>
-    <nav className="lesson-steps" aria-label="Lesson steps">{data.lesson.steps.map((item, position) => <button key={item.id}
-      type="button" aria-current={position === index ? 'step' : undefined} disabled={saving}
-      onClick={() => { void move(position); }}>{position + 1}. {item.heading}</button>)}</nav>
+      {data.lesson.sourceMode === 'unverified' && <p>Unverified source</p>}</header>
     <div className="lesson-layout"><div className="lesson-main"><LessonDiagram key={`${diagram.id}:${index}`} diagram={diagram} step={step} runningExample={data.lesson.runningExample} />
       <section className="lesson-content" aria-labelledby="lesson-step-heading"><span className="eyebrow">STEP {index + 1}</span>
         <h2 id="lesson-step-heading">{step.heading}</h2><p>{step.caption}</p>
@@ -44,8 +44,6 @@ export function LessonView() {
         </li>)}</ul></div>}
         <div className="lesson-actions"><ButtonUi variant="quiet" disabled={saving || index === 0} onClick={() => { void move(index - 1); }}>Previous</ButtonUi>
           {index < data.lesson.steps.length - 1 && <ButtonUi disabled={saving} onClick={() => { void move(index + 1); }}>Next step</ButtonUi>}</div>
-        {index === data.lesson.steps.length - 1 && <div className="lesson-quiz-entry"><p>You have reached the end of this lesson.</p>
-          <ButtonUiLink to={`/learn/${data.id}/quiz`}>Go to quiz</ButtonUiLink></div>}
         {saveError && <p role="alert" className="form-error">Could not save your place. Please try again.</p>}
       </section></div></div>
   </article>;

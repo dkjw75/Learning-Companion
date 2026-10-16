@@ -20,7 +20,7 @@ export function App() {
     <header className="app-header">
       <nav className="header-inner" aria-label="Main navigation">
         <Link className="brand" to={inProduct ? '/home' : '/'}><span className="brand-mark"><BookOpenText size={18} /></span> LearningCompanion</Link>
-        {inProduct && <div className="main-links"><NavLink to="/home">Home</NavLink><NavLink to="/learn">Learn</NavLink><NavLink to="/map">Knowledge Map</NavLink></div>}
+        {inProduct && <div className="main-links"><NavLink to="/home">Home</NavLink><NavLink to="/learn">Learn</NavLink></div>}
         {inProduct && <span className="profile-badge"><CircleUserRound size={19} /> {profile?.isAnonymous ? 'Guest' : 'My learning'}</span>}
       </nav>
     </header>
@@ -32,7 +32,7 @@ export function App() {
         <Route path="/learn" element={gated(<CatalogueView />)} />
         <Route path="/learn/:sessionId" element={gated(<LessonView />)} />
         <Route path="/learn/:sessionId/quiz" element={gated(<QuizView />)} />
-        <Route path="/map" element={gated(<CatalogueView map />)} />
+        <Route path="/map" element={<Navigate to="/learn" replace />} />
         <Route path="*" element={<>
           <h1 className="mb-3 text-3xl font-semibold">Page not found</h1>
           <p className="mb-5 text-muted-foreground">This page is not available.</p>

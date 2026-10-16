@@ -149,7 +149,7 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 **Work:**
 
 - Build one accessible topic-tree screen; it is both the place to choose lessons and the place to see learning history. There is no second knowledge-map or Explore screen.
-- Prepare four fixed broad roots: Software Development, AI Engineering, Cybersecurity, and Cloud Computing. During Stage 9, show only roots/branches with currently usable lessons; hide empty roots and expansion actions until Stage 13 makes them usable. Keep the existing four working lessons reachable without fabricating three generated children for them.
+- Proposed broad roots (10): Software Development; AI Engineering; Cybersecurity; Cloud Computing; Data Science and Analytics; Databases and Data Engineering; Computer Networks; Operating Systems; Hardware and Embedded Systems; Human-Computer Interaction. Align the PRD and technical design's four-root contracts before implementing this proposal. During Stage 9, show only roots/branches with currently usable lessons; hide empty roots and expansion actions until Stage 13 makes them usable. Keep the existing four working lessons reachable without fabricating three generated children for them.
 - Add node details with objectives, citations, assessment basis, evidence, history, and Learn/Review actions. Show actual Not assessed, Explored, Developing, or Demonstrated understanding states.
 - Adapt the approved Knowledge Map visual theme to a parent-child tree. Preserve keyboard selection and a readable list alternative; do not add a force-graph dependency or unsupported prerequisite links.
 - Rename navigation to Topics when this screen is ready, and redirect any existing `/map` links to the one tree screen.

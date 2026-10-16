@@ -54,7 +54,8 @@ export type CompleteOnboarding = z.infer<typeof completeOnboardingSchema>;
 
 export const homeSchema = z.strictObject({
   concepts: z.array(z.strictObject({
-    id: entityIdSchema, slug: shortTextSchema, title: shortTextSchema,
+    id: entityIdSchema, slug: shortTextSchema, title: shortTextSchema, description: shortTextSchema.nullable(),
+    objectives: z.array(shortTextSchema), citations: z.array(z.strictObject({ title: shortTextSchema, url: z.url() })),
     area: interestAreaSchema, order: z.number().int().positive(),
     contentAvailable: z.boolean(), status: learningStatusSchema, sessionId: entityIdSchema.nullable(),
     sessionCompleted: z.boolean(),

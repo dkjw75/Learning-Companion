@@ -72,12 +72,19 @@ describe('guided lesson player', () => {
     expect(screen.getByRole('heading', { name: 'Technical breakdown' })).toBeVisible();
     expect(screen.getByText(depth.workedExample)).toBeVisible();
     expect(screen.getByRole('link', { name: /Reference/ })).toHaveAttribute('href', 'https://example.com/reference');
-    await user.click(screen.getByRole('button', { name: '2. Connect' }));
+    const rail = screen.getByRole('navigation', { name: 'Lesson steps' });
+    expect(rail).toHaveTextContent('On this lesson');
+    expect(screen.getByRole('button', { name: 'Start' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Start' })).toHaveAttribute('aria-current', 'step');
+    expect(rail).toHaveTextContent('Go to Quiz');
+    expect(screen.queryByText('Step 1 of 4')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Go to Quiz' })).toHaveAttribute('href', `/learn/${session.id}/quiz`);
+    await user.click(screen.getByRole('button', { name: 'Connect' }));
     expect(await screen.findByRole('region', { name: 'Relations' })).toHaveTextContent('Customers');
     expect(saveLessonStep).toHaveBeenCalledWith(session.id, 1);
-    expect(screen.queryByRole('link', { name: 'Go to quiz' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '4. Finish' }));
-    expect(screen.getByRole('link', { name: 'Go to quiz' })).toHaveAttribute('href', `/learn/${session.id}/quiz`);
+    expect(screen.getByRole('button', { name: 'Connect' })).toHaveAttribute('aria-current', 'step');
+    await user.click(screen.getByRole('button', { name: 'Finish' }));
+    expect(screen.getByRole('button', { name: 'Finish' })).toHaveAttribute('aria-current', 'step');
   });
 
   it('opens the saved step without generating another lesson', async () => {
