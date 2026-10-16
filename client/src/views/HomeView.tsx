@@ -25,6 +25,11 @@ const skillBranches = [
 const treeWidth = 2400;
 const branchX = (index: number) => 210 + index * 220;
 const statusOrder = ['not_assessed', 'explored', 'developing', 'demonstrated_understanding'] as const;
+function TopicExpansionButton({ topic, onOpen }: { topic: string; onOpen: (trigger: HTMLButtonElement) => void }) {
+  return <button className="skill-expand-button" type="button" aria-label={`Learn something new from ${topic}`} onClick={event => onOpen(event.currentTarget)}>
+    <Plus size={17} aria-hidden="true" /><span role="tooltip">Learn something new</span>
+  </button>;
+}
 function useHomeData() {
   const { session } = useSession();
   return useQuery({ queryKey: ['home', session?.userId], queryFn: fetchHome, enabled: Boolean(session) });
@@ -91,9 +96,28 @@ export function HomeView() {
 function SkillTree({ concepts }: { concepts: ConceptChoice[] }) {
   const viewport = useRef<HTMLElement>(null);
   const drag = useRef<{ x: number; y: number } | null>(null);
+  const expansionTrigger = useRef<HTMLButtonElement | null>(null);
   const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [expandingFrom, setExpandingFrom] = useState<string | null>(null);
+  const [expansionPosition, setExpansionPosition] = useState({ left: 12, top: 12 });
   const selected = concepts.find(concept => concept.id === selectedId);
+  const openExpansion = (topic: string, trigger: HTMLButtonElement) => {
+    expansionTrigger.current = trigger;
+    const bounds = trigger.getBoundingClientRect();
+    const dialogWidth = Math.min(360, window.innerWidth - 24);
+    const right = bounds.right + 12;
+    setExpansionPosition({
+      left: right + dialogWidth <= window.innerWidth - 12 ? right : Math.max(12, bounds.left - dialogWidth - 12),
+      top: Math.max(12, Math.min(bounds.top - 20, window.innerHeight - 300)),
+    });
+    setSelectedId(null);
+    setExpandingFrom(topic);
+  };
+  const closeExpansion = () => {
+    setExpandingFrom(null);
+    expansionTrigger.current?.focus();
+  };
 
   const zoom = useCallback((factor: number, clientX: number, clientY: number) => {
     const bounds = viewport.current?.getBoundingClientRect();
@@ -164,8 +188,8 @@ function SkillTree({ concepts }: { concepts: ConceptChoice[] }) {
       <div className="skill-tree-root skill-tree-node" style={{ left: 1200, top: 24 }}><span className="skill-hex"><UserRound size={24} /></span><strong>You</strong></div>
       <ul className="skill-branches">{skillBranches.map((branch, index) => {
         const lessons = branch.lessons.map(slug => concepts.find(concept => concept.slug === slug)).filter((concept): concept is ConceptChoice => Boolean(concept));
-        return <li className="skill-branch skill-tree-node" key={branch.title} style={{ left: branchX(index), top: 225 }}><span className="skill-hex"><branch.icon size={21} /></span><h2>{branch.title}</h2>
-          {lessons.length > 0 && <ul className="skill-leaves">{lessons.map((lesson, lessonIndex) => <li className="skill-tree-node" key={lesson.id} style={{ left: `calc(50% + ${lessons.length === 2 ? (lessonIndex === 0 ? -75 : 75) : 0}px)`, top: 165 }}><button className="skill-node-button" type="button" aria-pressed={selectedId === lesson.id} onClick={() => setSelectedId(lesson.id)}><span className="skill-hex" data-status={lesson.status}><BookOpen size={18} /></span><span>{lesson.title}</span><span className="sr-only">Learning status: {learningStatusLabels[lesson.status]}</span></button></li>)}</ul>}
+        return <li className="skill-branch skill-tree-node" key={branch.title} style={{ left: branchX(index), top: 225 }}><div className="skill-topic-node"><span className="skill-hex"><branch.icon size={21} /></span><h2>{branch.title}</h2><TopicExpansionButton topic={branch.title} onOpen={trigger => openExpansion(branch.title, trigger)} /></div>
+          {lessons.length > 0 && <ul className="skill-leaves">{lessons.map((lesson, lessonIndex) => <li className="skill-tree-node" key={lesson.id} style={{ left: `calc(50% + ${lessons.length === 2 ? (lessonIndex === 0 ? -75 : 75) : 0}px)`, top: 165 }}><div className="skill-topic-node"><button className="skill-node-button" type="button" aria-pressed={selectedId === lesson.id} onClick={() => setSelectedId(lesson.id)}><span className="skill-hex" data-status={lesson.status}><BookOpen size={18} /></span><span>{lesson.title}</span><span className="sr-only">Learning status: {learningStatusLabels[lesson.status]}</span></button><TopicExpansionButton topic={lesson.title} onOpen={trigger => openExpansion(lesson.title, trigger)} /></div></li>)}</ul>}
         </li>;
       })}</ul>
     </div>
@@ -180,6 +204,10 @@ function SkillTree({ concepts }: { concepts: ConceptChoice[] }) {
       </section>
       <div className="skill-detail-action"><LessonAction key={selected.id} concept={selected} /></div>
     </aside>}
+    {expandingFrom && <div className="topic-expansion-overlay" onClick={event => { if (event.target === event.currentTarget) closeExpansion(); }} onKeyDown={event => {
+      event.stopPropagation();
+      if (event.key === 'Escape') closeExpansion();
+    }}><div className="topic-expansion-dialog" role="dialog" aria-modal="true" aria-labelledby="topic-expansion-title" style={expansionPosition}><button type="button" className="topic-expansion-close" aria-label="Close" autoFocus onClick={closeExpansion}><X size={20} /></button><h2 id="topic-expansion-title">What do you want to learn?</h2><form className="topic-expansion-form" onSubmit={event => event.preventDefault()}><label className="sr-only" htmlFor="topic-expansion-input">Topic</label><input id="topic-expansion-input" type="text" placeholder="Type a topic or concept..." /><a href="#suggest" onClick={event => event.preventDefault()}>Got nothing in mind? Let me suggest for you</a><button type="submit">Submit</button></form></div></div>}
   </section>;
 }
 

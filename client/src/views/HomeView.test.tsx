@@ -42,6 +42,17 @@ it('shows one root, ten branches, and the four saved topics in their branches', 
   expect(tree.querySelectorAll('.skill-status-legend .skill-hex')).toHaveLength(4);
   expect(tree.querySelectorAll('.skill-branch > .skill-hex[data-status]')).toHaveLength(0);
 
+  const expandSoftware = within(tree).getByRole('button', { name: 'Learn something new from Software Development' });
+  expect(within(expandSoftware).getByRole('tooltip')).toHaveTextContent('Learn something new');
+  fireEvent.click(expandSoftware);
+  const expansionDialog = screen.getByRole('dialog', { name: 'What do you want to learn?' });
+  expect(expansionDialog).toBeVisible();
+  expect(within(expansionDialog).getByRole('textbox', { name: 'Topic' })).toBeVisible();
+  expect(within(expansionDialog).getByRole('link', { name: 'Got nothing in mind? Let me suggest for you' })).toHaveAttribute('href', '#suggest');
+  expect(within(expansionDialog).getByRole('button', { name: 'Submit' })).toBeVisible();
+  fireEvent.click(within(expansionDialog).getByRole('button', { name: 'Close' }));
+  expect(screen.queryByRole('dialog', { name: 'What do you want to learn?' })).not.toBeInTheDocument();
+
   const canvas = tree.querySelector('.skill-tree-canvas') as HTMLElement;
   fireEvent.click(within(tree).getByRole('button', { name: 'Zoom in' }));
   expect(canvas.style.transform).toContain('scale(1.2)');
@@ -53,7 +64,7 @@ it('shows one root, ten branches, and the four saved topics in their branches', 
   expect(canvas.style.transform).toMatch(/translate\([^,]+px, 20px\)/);
   fireEvent.pointerUp(tree, { pointerId: 1 });
 
-  fireEvent.click(within(tree).getByRole('button', { name: /What an API does/ }));
+  fireEvent.click(within(tree).getByText('What an API does').closest('button')!);
   let panel = screen.getByRole('complementary', { name: 'What an API does' });
   expect(within(panel).getByText('About What an API does')).toBeVisible();
   expect(within(panel).getByText('Understand What an API does')).toBeVisible();
@@ -61,11 +72,11 @@ it('shows one root, ten branches, and the four saved topics in their branches', 
   expect(panel.querySelector('.skill-status-badge')).toHaveAttribute('data-status', 'developing');
   expect(within(panel).getByRole('link', { name: 'Review lesson again' })).toHaveAttribute('href', '/learn/00000000-0000-4000-8000-000000000202');
 
-  fireEvent.click(within(tree).getByRole('button', { name: /HTTP requests and responses/ }));
+  fireEvent.click(within(tree).getByText('HTTP requests and responses').closest('button')!);
   panel = screen.getByRole('complementary', { name: 'HTTP requests and responses' });
   expect(within(panel).getByRole('link', { name: 'Resume lesson' })).toHaveAttribute('href', '/learn/00000000-0000-4000-8000-000000000201');
 
-  fireEvent.click(within(tree).getByRole('button', { name: /Clients and servers/ }));
+  fireEvent.click(within(tree).getByText('Clients and servers').closest('button')!);
   panel = screen.getByRole('complementary', { name: 'Clients and servers' });
   startLesson.mockResolvedValue({ id: '00000000-0000-4000-8000-000000000204' });
   fireEvent.click(within(panel).getByRole('button', { name: 'Start lesson' }));
