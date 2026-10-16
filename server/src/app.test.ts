@@ -112,7 +112,7 @@ describe('foundation API', () => {
     expect(completeOnboarding).toHaveBeenCalledTimes(1);
   });
   it('requires authentication for private home data', async () => {
-    const getHome = vi.fn().mockResolvedValue({ concepts: [], recommendationId: null, reviewIds: [], activityCounts: [], recentSession: null });
+    const getHome = vi.fn().mockResolvedValue({ concepts: [], recommendations: { learn: null, review: [] }, activityCounts: [], recentSession: null });
     await request(createApp({ getProfile: vi.fn(), getHome })).get('/api/home').expect(401);
     const response = await request(createApp({ getProfile: vi.fn(), getHome })).get('/api/home')
       .set('Authorization', 'Bearer verified.token').expect(200);

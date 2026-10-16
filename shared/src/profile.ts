@@ -52,6 +52,22 @@ export const completeOnboardingSchema = z.strictObject({
 });
 export type CompleteOnboarding = z.infer<typeof completeOnboardingSchema>;
 
+export const recommendationsSchema = z.strictObject({
+  learn: z.strictObject({
+    conceptId: entityIdSchema,
+    reasonCode: z.enum(['interest', 'prerequisite', 'next_available']),
+    reason: shortTextSchema,
+  }).nullable(),
+  review: z.array(z.strictObject({
+    conceptId: entityIdSchema,
+    reasonCode: z.enum(['finish_check', 'developing', 'explored', 'recall_due']),
+    reason: shortTextSchema,
+    dueAt: z.iso.datetime({ offset: true }).nullable(),
+  })),
+});
+export const recommendationsEnvelopeSchema = successEnvelopeSchema(recommendationsSchema);
+export type Recommendations = z.infer<typeof recommendationsSchema>;
+
 export const homeSchema = z.strictObject({
   concepts: z.array(z.strictObject({
     id: entityIdSchema, slug: shortTextSchema, title: shortTextSchema, description: shortTextSchema.nullable(),
@@ -60,8 +76,7 @@ export const homeSchema = z.strictObject({
     contentAvailable: z.boolean(), status: learningStatusSchema, sessionId: entityIdSchema.nullable(),
     sessionCompleted: z.boolean(),
   })),
-  recommendationId: entityIdSchema.nullable(),
-  reviewIds: z.array(entityIdSchema),
+  recommendations: recommendationsSchema,
   activityCounts: z.array(z.strictObject({ date: z.iso.date(), count: z.number().int().positive() })),
   recentSession: z.strictObject({
     id: entityIdSchema, conceptId: entityIdSchema,

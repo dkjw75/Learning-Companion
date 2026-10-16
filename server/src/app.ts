@@ -63,6 +63,11 @@ export function createApp(profileService: ProfileService = createProfileService(
     if (!profileService.getHome) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not load your learning choices.');
     res.json({ data: await profileService.getHome(token) });
   });
+  app.get('/api/recommendations', async (req, res) => {
+    const token = tokenFrom(req.get('Authorization'));
+    if (!profileService.getHome) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not load your recommendations.');
+    res.json({ data: (await profileService.getHome(token)).recommendations });
+  });
   app.post('/api/sessions', async (req, res) => {
       res.setHeader('Cache-Control', 'no-store');
       const token = tokenFrom(req.get('Authorization'));

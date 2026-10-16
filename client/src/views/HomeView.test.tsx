@@ -20,7 +20,7 @@ it('shows one root, ten branches, and the four saved topics in their branches', 
     citations: [{ title: 'Reference page', url: 'https://example.com/reference' }],
     contentAvailable: true, sessionId: index === 0 ? null : `00000000-0000-4000-8000-00000000020${index}`,
     sessionCompleted: index > 1,
-  })) });
+  })), recommendations: { learn: null, review: [] } });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(<QueryClientProvider client={client}><MemoryRouter initialEntries={['/learn']}><Routes>
     <Route path="/learn" element={<CatalogueView />} /><Route path="/learn/:sessionId" element={<p>Lesson opened</p>} />
