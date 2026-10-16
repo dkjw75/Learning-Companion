@@ -69,7 +69,7 @@ describe('guided lesson player', () => {
     expect(client.querySelector('svg.lucide-network')).not.toBeNull();
     await user.click(client);
     expect(client).toHaveAttribute('aria-pressed', 'true');
-    await user.click(screen.getByText('Worked example'));
+    expect(screen.getByRole('heading', { name: 'Technical breakdown' })).toBeVisible();
     expect(screen.getByText(depth.workedExample)).toBeVisible();
     expect(screen.getByRole('link', { name: /Reference/ })).toHaveAttribute('href', 'https://example.com/reference');
     await user.click(screen.getByRole('button', { name: '2. Connect' }));

@@ -2,7 +2,11 @@
 
 Before editing, read the requested stage's section in [build-plan.md](docs/build-plan.md) and only the relevant sections of [PRD.md](PRD.md), [technical-design.md](docs/technical-design.md), and the design references. Follow any fixed contracts those sections reference; read further when needed to resolve a dependency or conflict. Do not reread unchanged sections already available in this chat. Implement only the requested stage. This is a separate application; do not modify ThinkTwice or reuse its configuration or secrets.
 
+Keep context and output small: use targeted searches and read only the file sections needed for the task and its dependencies. Avoid whole-file dumps, repeated reads, and verbose tool output. Answer in concise, plain language; include only the explanation, evidence, and limitations needed to understand the result. Complete required checks, but repeat or broaden them only after relevant changes, failures, or unresolved risks.
+
 Run the stage's completion checks. For application changes run `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build`; run the relevant browser checks with `npm run test:e2e`. Report external dependencies that are unavailable as unverified. Never replace a failed live capability with an unlabeled fixture.
+
+Do not create or update implementation logs, including `docs/implementations/implementation-log-StageN.X.md`, unless the user explicitly requests them. Report changes, checks, outcomes, and remaining dependencies briefly in the final response instead. This overrides earlier requirements to log each invocation.
 
 Keep credentials out of source, examples, browser state, and test output. Public assessment DTOs exclude answer keys and private rubrics. Only the server computes learning status; source status is independent of assessment outcomes.
 

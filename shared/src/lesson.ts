@@ -43,7 +43,7 @@ export const diagramSchema = z.discriminatedUnion('type', [
 export const lessonStepSchema = z.strictObject({
   id: contentIdSchema, heading: shortTextSchema,
   caption: proseSchema.refine(text => text.split(/\s+/u).length <= 100, 'Captions must contain at most 100 words.'),
-  explanation: proseSchema.min(80).max(1200),
+  explanation: proseSchema.min(80).max(2400),
   workedExample: proseSchema.min(60).max(1200),
   commonMistake: proseSchema.min(40).max(800),
   diagramId: contentIdSchema,

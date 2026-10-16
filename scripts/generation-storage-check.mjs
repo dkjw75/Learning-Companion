@@ -26,7 +26,7 @@ const provider = async prompt => {
       edges: [{ id: 'connection', from: 'start', to: 'end', label: 'Connects' }] }],
     steps: Array.from({ length: 4 }, (_, i) => ({ id: `step${i}`, heading: `Step ${i + 1}`,
       caption: `Synthetic storage check for ${input.title}.`,
-      explanation: `This synthetic explanation checks that ${input.title} can be saved with additional text for every step.`,
+      explanation: `This synthetic explanation checks that ${input.title} can be saved with additional text for every step.\n\nThis second paragraph is only part of the synthetic storage check.`,
       workedExample: `This synthetic worked example checks that ${input.title} has a separate example stored with the lesson.`,
       commonMistake: `Mistake: this text is a real lesson. Correction: it is only a synthetic storage check.`,
       diagramId: 'diagram',

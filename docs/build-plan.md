@@ -124,6 +124,7 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 - Add step navigation, component selection, captions, source links, generation loading/error/retry UI, and session-position persistence.
 - Load the saved generated lessons from Stage 6; never call Gemini directly from the browser.
 - Require one running example per lesson, concrete diagram values, directly connected labelled arrows, and per-step node/edge or table-row highlights. Apply the shared diagram contract and renderer to every future concept and both source modes; follow the diagram standard in `technical-design.md` and `design/README.md`.
+- Show substantial technical explanations and a breakdown of the same example directly below the diagram in the left column, reserving the right column for the tutor. Support operator enrichment of an existing lesson's text in place while preserving all diagram, source, assessment and progress context.
 - Implement mobile layout and keyboard access. Apply the approved Lesson design and selected components while retaining application-controlled diagrams and state.
 
 **Done when:** all four generated starter lessons render, refresh resumes the correct step without regeneration, every highlight resolves, and labels cannot execute markup or code.

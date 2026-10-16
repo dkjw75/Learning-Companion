@@ -33,14 +33,12 @@ export function LessonView() {
     <nav className="lesson-steps" aria-label="Lesson steps">{data.lesson.steps.map((item, position) => <button key={item.id}
       type="button" aria-current={position === index ? 'step' : undefined} disabled={saving}
       onClick={() => { void move(position); }}>{position + 1}. {item.heading}</button>)}</nav>
-    <div className="lesson-layout"><LessonDiagram key={`${diagram.id}:${index}`} diagram={diagram} step={step} runningExample={data.lesson.runningExample} />
+    <div className="lesson-layout"><div className="lesson-main"><LessonDiagram key={`${diagram.id}:${index}`} diagram={diagram} step={step} runningExample={data.lesson.runningExample} />
       <section className="lesson-content" aria-labelledby="lesson-step-heading"><span className="eyebrow">STEP {index + 1}</span>
         <h2 id="lesson-step-heading">{step.heading}</h2><p>{step.caption}</p>
-        <div className="lesson-depth">
-          <details><summary>Understand this step</summary><p>{step.explanation}</p></details>
-          <details><summary>Worked example</summary><p>{step.workedExample}</p></details>
-          <details><summary>Common mistake</summary><p>{step.commonMistake}</p></details>
-        </div>
+        <div className="lesson-explanation">{step.explanation.split(/\n\s*\n/u).filter(paragraph => paragraph.trim()).map((paragraph, position) => <p key={position}>{paragraph}</p>)}</div>
+        <section className="lesson-breakdown"><h3>Technical breakdown</h3><p>{step.workedExample}</p></section>
+        <aside className="lesson-mistake"><h3>Common mistake</h3><p>{step.commonMistake}</p></aside>
         {citations.length > 0 && <div className="lesson-sources"><h3>Sources for this step</h3><ul>{citations.map(citation => <li key={citation.id}>
           {/^https?:\/\//i.test(citation.url) ? <a href={citation.url} target="_blank" rel="noopener noreferrer">{citation.heading} ↗</a> : citation.heading}
         </li>)}</ul></div>}
@@ -48,6 +46,6 @@ export function LessonView() {
           {index < data.lesson.steps.length - 1 && <ButtonUi disabled={saving} onClick={() => { void move(index + 1); }}>Next step</ButtonUi>}</div>
         {index === data.lesson.steps.length - 1 && <p className="lesson-finished">You have reached the end of this lesson.</p>}
         {saveError && <p role="alert" className="form-error">Could not save your place. Please try again.</p>}
-      </section></div>
+      </section></div></div>
   </article>;
 }

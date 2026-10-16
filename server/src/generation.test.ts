@@ -20,7 +20,7 @@ const generated = {
     edges: [{ id: 'request', from: 'client', to: 'server', label: 'Requests' }] }],
   steps: Array.from({ length: 4 }, (_, i) => ({ id: `step${i}`, heading: `Step ${i}`,
     caption: 'A client requests a page from a server.',
-    explanation: 'The client begins the exchange by asking the server for a page. The server can then send the requested page back to the client for the browser to display.',
+    explanation: 'The client begins the exchange by asking the server for a page.\n\nThe server can then send the requested page back to the client for the browser to display.',
     workedExample: 'A browser asks a server for its home page. The server sends the page, and the browser displays it.',
     commonMistake: 'Mistake: the server starts this request. Correction: the client asks for the page first.',
     diagramId: 'main',

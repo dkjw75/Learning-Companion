@@ -4,16 +4,16 @@ import { AppWindow, ArrowLeftRight, Boxes, Braces, Database, KeyRound, Laptop, N
 
 const icons = { client: Laptop, server: Server, api: Network, database: Database, table: Table2,
   json: Braces, security: KeyRound, mobile: Smartphone, web: AppWindow, exchange: ArrowLeftRight, generic: Boxes };
-const position = (index: number) => ({ x: index % 2 ? 590 : 40, y: Math.floor(index / 2) * 330 + 30 });
+const position = (index: number) => ({ x: index % 2 ? 450 : 20, y: Math.floor(index / 2) * 330 + 30 });
 function connection(diagram: DiagramSpec, edge: DiagramSpec['edges'][number]) {
   const from = position(diagram.nodes.findIndex(node => node.id === edge.from));
   const to = position(diagram.nodes.findIndex(node => node.id === edge.to));
   const pair = diagram.edges.filter(item => [edge.from, edge.to].includes(item.from) && [edge.from, edge.to].includes(item.to));
   const lane = (pair.indexOf(edge) - (pair.length - 1) / 2) * 95;
-  const middle = 450 + lane / 2;
+  const middle = 350 + lane / 3;
   const y1 = from.y + 110 + lane;
   const y2 = to.y + 110 + lane;
-  return { path: `M ${from.x === 40 ? 310 : 590} ${y1} H ${middle} V ${y2} H ${to.x === 40 ? 310 : 590}`,
+  return { path: `M ${from.x === 20 ? 250 : 450} ${y1} H ${middle} V ${y2} H ${to.x === 20 ? 250 : 450}`,
     x: middle, y: (y1 + y2) / 2, direction: from.x === to.x ? (to.y > from.y ? '↓' : '↑') : (to.x > from.x ? '→' : '←') };
 }
 
@@ -35,7 +35,7 @@ export function LessonDiagram({ diagram, step, runningExample }: { diagram: Diag
       {selected && <p className="diagram-selection" role="status">{diagram.table.columns[Number(selected.split(':')[1])]}: {diagram.table.rows[Number(selected.split(':')[0])]?.[Number(selected.split(':')[1])]}</p>}
     </div> : <div className="diagram-scroll" tabIndex={0} aria-label="Example diagram; scroll to explore">
       <div className="diagram-stage" style={{ height: Math.ceil(diagram.nodes.length / 2) * 330 }}>
-        <svg className="diagram-wires" width="900" height="100%" aria-hidden="true">
+        <svg className="diagram-wires" width="700" height="100%" aria-hidden="true">
           <defs><marker id={markerId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
           </marker></defs>

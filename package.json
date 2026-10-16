@@ -30,7 +30,8 @@
     "content:seed": "node scripts/content-seed.mjs",
     "ai:smoke": "npm run build -w @learning-companion/server && node scripts/ai-smoke.mjs",
     "generation:live": "npm run build -w @learning-companion/server && node scripts/generation-live.mjs",
-    "generation:storage:check": "npm run build -w @learning-companion/server && node scripts/generation-storage-check.mjs"
+    "generation:storage:check": "npm run build -w @learning-companion/server && node scripts/generation-storage-check.mjs",
+    "lesson:enrich": "node scripts/lesson-enrich.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.16",
