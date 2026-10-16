@@ -1,4 +1,4 @@
-import { assessmentRoundSchema, errorEnvelopeSchema, lessonSchema } from '@learning-companion/shared';
+import { assessmentRoundSchema, errorEnvelopeSchema, hintResponseSchema, lessonSchema, submitAnswerResponseSchema, type SubmitAnswerResponse } from '@learning-companion/shared';
 import { z } from 'zod';
 import { getSupabaseClient } from '@/auth/supabase';
 
@@ -7,6 +7,8 @@ const savedSessionSchema = z.strictObject({
   lesson: lessonSchema, round: assessmentRoundSchema,
   citations: z.array(z.strictObject({ id: z.uuid(), heading: z.string(), url: z.string() })),
   currentStep: z.number().int().nonnegative(),
+  attempts: z.array(submitAnswerResponseSchema),
+  assistedQuestionIds: z.array(z.string()),
 });
 export type SavedLessonSession = z.infer<typeof savedSessionSchema>;
 
@@ -32,6 +34,14 @@ export const startLesson = async (conceptId: string, requestId: string): Promise
   }, 140_000));
 export const fetchLesson = async (id: string): Promise<SavedLessonSession> =>
   savedSessionSchema.parse(await sessionRequest(`/sessions/${id}`));
+export const submitAnswer = async (roundId: string, questionId: string, answer: string, requestId: string): Promise<SubmitAnswerResponse> =>
+  submitAnswerResponseSchema.parse(await sessionRequest(`/rounds/${roundId}/answers`, {
+    method: 'POST', body: JSON.stringify({ questionId, answer, requestId }),
+  }));
+export const requestHint = async (roundId: string, questionId: string, requestId: string): Promise<string> =>
+  hintResponseSchema.parse(await sessionRequest(`/rounds/${roundId}/hints`, {
+    method: 'POST', body: JSON.stringify({ questionId, requestId }),
+  })).hint;
 export const saveLessonStep = async (id: string, step: number): Promise<number> => {
   const result = z.strictObject({ currentStep: z.number().int().nonnegative() }).parse(await sessionRequest(
     `/sessions/${id}/position`, { method: 'PATCH', body: JSON.stringify({ step }) }));

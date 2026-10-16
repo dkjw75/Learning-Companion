@@ -4,7 +4,7 @@ Before editing, read the requested stage's section in [build-plan.md](docs/build
 
 Keep context and output small: use targeted searches and read only the file sections needed for the task and its dependencies. Avoid whole-file dumps, repeated reads, and verbose tool output. Answer in concise, plain language; include only the explanation, evidence, and limitations needed to understand the result. Complete required checks, but repeat or broaden them only after relevant changes, failures, or unresolved risks.
 
-Run the stage's completion checks. For application changes run `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build`; run the relevant browser checks with `npm run test:e2e`. Report external dependencies that are unavailable as unverified. Never replace a failed live capability with an unlabeled fixture.
+Keep testing minimal for each turn: run only the smallest relevant check, usually one focused test or typecheck. Do not run full test suites, lint, build, or E2E by default; use them only when a concrete risk calls for them or the user asks. Do not add broad tests or repeat passing checks without a reason. The user handles manual browser testing. Report external dependencies that are unavailable as unverified. Never replace a failed live capability with an unlabeled fixture.
 
 Do not create or update implementation logs, including `docs/implementations/implementation-log-StageN.X.md`, unless the user explicitly requests them. Report changes, checks, outcomes, and remaining dependencies briefly in the final response instead. This overrides earlier requirements to log each invocation.
 

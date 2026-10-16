@@ -41,7 +41,7 @@ const session = {
     ],
   },
   round: { id: '00000000-0000-4000-8000-000000000301', sessionId: '00000000-0000-4000-8000-000000000201', kind: 'initial', sourceMode: 'source_grounded', assessmentBasis: 'ai_generated_key', questions: [] },
-  citations: [{ id: '00000000-0000-4000-8000-000000000501', heading: 'Reference', url: 'https://example.com/reference' }],
+  citations: [{ id: '00000000-0000-4000-8000-000000000501', heading: 'Reference', url: 'https://example.com/reference' }], attempts: [], assistedQuestionIds: [],
 } as SavedLessonSession;
 
 function showLesson() {
@@ -75,6 +75,9 @@ describe('guided lesson player', () => {
     await user.click(screen.getByRole('button', { name: '2. Connect' }));
     expect(await screen.findByRole('region', { name: 'Relations' })).toHaveTextContent('Customers');
     expect(saveLessonStep).toHaveBeenCalledWith(session.id, 1);
+    expect(screen.queryByRole('link', { name: 'Go to quiz' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '4. Finish' }));
+    expect(screen.getByRole('link', { name: 'Go to quiz' })).toHaveAttribute('href', `/learn/${session.id}/quiz`);
   });
 
   it('opens the saved step without generating another lesson', async () => {

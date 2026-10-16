@@ -8,6 +8,8 @@ const questionGuard = await readFile(new URL('../supabase/migrations/20261009000
 const onboardingMigration = await readFile(new URL('../supabase/migrations/20261009000200_onboarding.sql', import.meta.url), 'utf8');
 const broadInterestsMigration = await readFile(new URL('../supabase/migrations/20261009000300_broad_tech_interests.sql', import.meta.url), 'utf8');
 const aiOperationsMigration = await readFile(new URL('../supabase/migrations/20261009000400_ai_operations.sql', import.meta.url), 'utf8');
+const assessmentPracticeMigration = await readFile(new URL('../supabase/migrations/20261016000300_assessment_practice.sql', import.meta.url), 'utf8');
+const assessmentResultsMigration = await readFile(new URL('../supabase/migrations/20261016000400_assessment_results.sql', import.meta.url), 'utf8');
 const seed = await readFile(new URL('../supabase/seed.sql', import.meta.url), 'utf8');
 const a = '00000000-0000-4000-8000-000000000901';
 const b = '00000000-0000-4000-8000-000000000902';
@@ -33,6 +35,8 @@ async function createDatabase() {
   await pg.exec(onboardingMigration);
   await pg.exec(broadInterestsMigration);
   await pg.exec(aiOperationsMigration);
+  await pg.exec(assessmentPracticeMigration);
+  await pg.exec(assessmentResultsMigration);
   await pg.exec(seed);
   return pg;
 }
@@ -97,6 +101,7 @@ try {
   const first = (await pg.query(`select public.submit_mcq_answer($1,'q-0','a',$2) as result`,[roundId,firstRequest])).rows[0].result;
   assert.equal(first.completed,false);
   assert.equal(first.evidence.independent,true);
+  assert.equal((await pg.query('select completed_at from public.lesson_sessions where id=$1',[sessionId])).rows[0].completed_at,null);
   const replay = (await pg.query(`select public.submit_mcq_answer($1,'q-0','a',$2) as result`,[roundId,firstRequest])).rows[0].result;
   assert.deepEqual(replay,first);
   await expectDenied(() => pg.query(`select public.submit_mcq_answer($1,'q-0','b',$2)`,[roundId,firstRequest]), 'A request ID cannot be reused with a different answer.');
@@ -106,11 +111,39 @@ try {
   assert.equal(final.progressUpdate.currentStatus,'demonstrated_understanding');
   assert.equal(final.progressUpdate.sourceMode,'unverified');
   assert.equal(final.progressUpdate.assessmentBasis,'ai_generated_key');
+  assert.ok((await pg.query('select completed_at from public.lesson_sessions where id=$1',[sessionId])).rows[0].completed_at);
   assert.equal((await pg.query('select completed_check_count from public.user_concept_progress where concept_id=$1',[privateId])).rows[0].completed_check_count,1);
+  const practiceSessionId = randomUUID();
+  const practiceRoundId = randomUUID();
   await asOwner(pg);
-  assert.equal((await pg.query('select count(*)::int as n from public.answer_attempts')).rows[0].n,3);
+  await pg.query(`insert into public.lesson_sessions(id,owner_id,concept_id,mode,source_mode)
+    values ($1,$2,$3,'learn','unverified')`, [practiceSessionId,a,privateId]);
+  await pg.query(`insert into public.assessment_rounds(id,session_id,owner_id,kind,questions,source_mode,assessment_basis)
+    values ($1,$2,$3,'initial',$4,'unverified','ai_generated_key')`, [practiceRoundId,practiceSessionId,a,JSON.stringify(questions)]);
+  await pg.query(`insert into app_private.assessment_secrets(round_id,answer_keys) values ($1,$2)`,
+    [practiceRoundId,JSON.stringify({'q-0':'a','q-1':'a','q-2':'a'})]);
+  await asUser(pg,a);
+  const hintId = randomUUID();
+  const hint = (await pg.query(`select public.request_mcq_hint($1,'q-0',$2) as result`,[practiceRoundId,hintId])).rows[0].result;
+  assert.equal(hint.assisted,true);
+  assert.deepEqual((await pg.query(`select public.request_mcq_hint($1,'q-0',$2) as result`,[practiceRoundId,hintId])).rows[0].result,hint);
+  const assistedFirst = (await pg.query(`select public.submit_mcq_answer($1,'q-0','b',$2) as result`,[practiceRoundId,randomUUID()])).rows[0].result;
+  assert.equal(assistedFirst.evidence.independent,false);
+  assert.equal((await pg.query('select learning_status from public.user_concept_progress where concept_id=$1',[privateId])).rows[0].learning_status,'demonstrated_understanding');
+  const retryId = randomUUID();
+  const retry = (await pg.query(`select public.submit_mcq_answer($1,'q-0','a',$2) as result`,[practiceRoundId,retryId])).rows[0].result;
+  assert.equal(retry.evidence.attemptIndex,2);
+  assert.equal(retry.evidence.independent,false);
+  assert.deepEqual((await pg.query(`select public.submit_mcq_answer($1,'q-0','a',$2) as result`,[practiceRoundId,retryId])).rows[0].result,retry);
+  await pg.query(`select public.submit_mcq_answer($1,'q-1','a',$2)`,[practiceRoundId,randomUUID()]);
+  const practiceFinal = (await pg.query(`select public.submit_mcq_answer($1,'q-2','a',$2) as result`,[practiceRoundId,randomUUID()])).rows[0].result;
+  assert.equal(practiceFinal.progressUpdate.currentStatus,'developing');
+  assert.ok((await pg.query('select completed_at from public.lesson_sessions where id=$1',[practiceSessionId])).rows[0].completed_at);
+  assert.equal((await pg.query('select completed_check_count from public.user_concept_progress where concept_id=$1',[privateId])).rows[0].completed_check_count,2);
+  await asOwner(pg);
+  assert.equal((await pg.query('select count(*)::int as n from public.answer_attempts')).rows[0].n,7);
   const second = await createDatabase();
   try { assert.equal((await second.query('select count(*)::int as n from public.concepts')).rows[0].n,12); }
   finally { await second.close(); }
-  console.log('Embedded PostgreSQL smoke passed: fresh migration replay, 12 concepts/13 edges, profile trigger, owner isolation, key secrecy, and atomic idempotent progress.');
+  console.log('Embedded PostgreSQL smoke passed: migrations, owner isolation, key secrecy, hints, retries, and atomic progress.');
 } finally { await pg.close(); }

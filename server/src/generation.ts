@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { GoogleGenAI, Type, type Schema } from '@google/genai';
 import { Pool } from 'pg';
 import { z } from 'zod';
-import { assessmentRoundSchema, diagramSchema, lessonSchema, lessonStepSchema, mcqSchema,
+import { assessmentRoundSchema, submitAnswerResponseSchema, diagramSchema, lessonSchema, lessonStepSchema, mcqSchema,
   type AssessmentRound, type Lesson, type Profile } from '@learning-companion/shared';
 import { AiOperationError } from './ai.js';
 import { reserveCall, transaction } from './ai-store.js';
@@ -25,7 +25,8 @@ export type Passage = { id: string; heading: string; body: string; sourceUrl: st
 export type GenerationInput = { conceptId: string; title: string; objectives: z.infer<typeof objectiveSchema>[];
   passages: Passage[]; interests: string[]; experienceLevel: string; diagnosticEvidence: unknown };
 export type SavedSession = { id: string; conceptId: string; generationState: 'ready'; lesson: Lesson;
-  round: AssessmentRound; citations: { id: string; heading: string; url: string }[]; currentStep: number };
+  round: AssessmentRound; citations: { id: string; heading: string; url: string }[]; currentStep: number;
+  attempts: ReturnType<typeof submitAnswerResponseSchema.parse>[]; assistedQuestionIds: string[] };
 export type GenerateProvider = (prompt: string) => Promise<string>;
 export type GenerationService = {
   start(profile: Profile, conceptId: string, requestId: string): Promise<SavedSession>;
@@ -154,8 +155,8 @@ export function createGenerationService(databaseUrl = process.env.DATABASE_URL?.
     if (!uuid.safeParse(ownerId).success || !uuid.safeParse(sessionId).success) return null;
     const saved = await pool.query<{ id: string; concept_id: string; generation_state: string; lesson: Lesson;
       citation_snapshot: SavedSession['citations']; current_step: number; round_id: string; questions: AssessmentRound['questions'];
-      source_mode: string; assessment_basis: string }>(`select s.id,s.concept_id,s.generation_state,s.lesson,s.citation_snapshot,
-      s.current_step,r.id as round_id,r.questions,r.source_mode,r.assessment_basis
+      source_mode: string; assessment_basis: string; assisted_question_ids: string[] }>(`select s.id,s.concept_id,s.generation_state,s.lesson,s.citation_snapshot,
+      s.current_step,r.id as round_id,r.questions,r.source_mode,r.assessment_basis,r.assisted_question_ids
       from public.lesson_sessions s join public.assessment_rounds r on r.session_id=s.id and r.owner_id=s.owner_id and r.kind='initial'
       where s.id=$1 and s.owner_id=$2 and s.generation_state='ready'`, [sessionId, ownerId]);
     const row = saved.rows[0];
@@ -165,8 +166,12 @@ export function createGenerationService(databaseUrl = process.env.DATABASE_URL?.
     const lesson = parsed.data;
     const round = assessmentRoundSchema.parse({ id: row.round_id, sessionId: row.id, kind: 'initial',
       sourceMode: row.source_mode, assessmentBasis: row.assessment_basis, questions: row.questions });
+    const attempts = await pool.query<{ response_snapshot: unknown }>(`select response_snapshot from public.answer_attempts
+      where owner_id=$1 and round_id=$2 order by question_id,attempt_index`, [ownerId, row.round_id]);
     return { id: row.id, conceptId: row.concept_id, generationState: 'ready', lesson, round,
-      citations: row.citation_snapshot, currentStep: row.current_step };
+      citations: row.citation_snapshot, currentStep: row.current_step,
+      attempts: attempts.rows.map(attempt => submitAnswerResponseSchema.parse(attempt.response_snapshot)),
+      assistedQuestionIds: row.assisted_question_ids };
   }
   async function loadInput(profile: Profile, conceptId: string): Promise<GenerationInput> {
     const concept = await pool.query<{ id: string; title: string; objectives: GenerationInput['objectives']; catalogue_order: number }>(`
@@ -278,7 +283,7 @@ export function createGenerationService(databaseUrl = process.env.DATABASE_URL?.
             where id=$1 and state='pending'`, [reserved.id, output.lesson.id]);
         });
         return { id: output.lesson.id, conceptId, generationState: 'ready', lesson: output.lesson,
-          round: output.round, citations: output.citations, currentStep: 0 };
+          round: output.round, citations: output.citations, currentStep: 0, attempts: [], assistedQuestionIds: [] };
       } catch (error) {
         const state = error instanceof AiOperationError && error.code === 'TIMEOUT' ? 'uncertain' : 'failed';
         await pool.query(`update app_private.operation_requests set state=$2,updated_at=now()

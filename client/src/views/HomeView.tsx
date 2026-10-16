@@ -28,7 +28,8 @@ function StartLesson({ concept }: { concept: ConceptChoice }) {
   const queryClient = useQueryClient();
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  if (concept.sessionId) return <div className="lesson-start"><ButtonUiLink size="small" to={`/learn/${concept.sessionId}`}>Resume lesson</ButtonUiLink></div>;
+  if (concept.sessionId) return <div className="lesson-start"><ButtonUiLink size="small" to={`/learn/${concept.sessionId}`}>
+    {concept.sessionCompleted ? 'Review lesson materials' : 'Resume lesson'}</ButtonUiLink></div>;
   if (!concept.contentAvailable) return <p>Lesson unavailable right now</p>;
   async function start() {
     setStarting(true); setError(null);

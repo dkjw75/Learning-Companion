@@ -1,6 +1,6 @@
 # PRD: Visual Technology Learning Companion
 
-Version 1.2 | 8 October 2026 | Product requirements | Source-backed generated lessons and questions
+Version 1.3 | 16 October 2026 | Product requirements | On-demand topic tree and source-backed lessons
 
 This document defines the product behaviour. The project name is a working name. Technical implementation decisions are specified separately in [technical-design.md](docs/technical-design.md).
 
@@ -33,19 +33,17 @@ These are intended benefits to validate with students, rather than established l
 
 ## 2. Initial product scope
 
-### Supported catalogue
+### Topic starters and lessons
 
-The first release contains 12 concepts across three connected areas:
+The first release starts with four broad, fixed roots: **Software Development**, **AI Engineering**, **Cybersecurity**, and **Cloud Computing**. The existing 12 web, API, and database concepts remain available as catalogue material; the four already source-backed lessons remain usable. They are not a requirement to hand-author every branch before students can explore the tree.
 
-- **Web communication:** clients and servers; HTTP requests and responses; HTTP methods; HTTP status codes.
-- **APIs:** what an API does; REST basics; JSON; authentication versus authorization.
-- **Databases:** tables and records; keys and relationships; selecting and filtering data; joins.
+Opening a root expands it into exactly three student-specific subtopics on request. A student can choose a subtopic to learn or request three deeper subtopics. Save each expansion so reopening it returns the same children. Each lesson targets one focused objective and roughly 15 minutes of learning. A student can stop expanding at any depth.
 
-Students can also explore additional topics using AI-generated content. Content without supporting references is visibly labelled as having an unverified source.
+When a student chooses an uncached lesson, Gemini discovers candidate public references; the backend checks and extracts permitted pages, chunks relevant text, and asks Gemini to generate the lesson from those saved passages. Show the actual citations. If suitable references cannot be obtained, show a retry or let the student choose another node; do not invent a successful sourced lesson. No separate badge is needed merely to say a page was found by Gemini. Do not represent automatically found material as independently approved.
 
 ### Core features
 
-Onboarding, topic recommendations, guided visual lessons, an animated tutor, understanding checks, targeted review, an Explore area, a knowledge map, guest-to-account progress preservation, and basic source management.
+Onboarding, topic recommendations, an expandable topic tree that also shows learning history, guided visual lessons, an animated tutor, understanding checks, targeted review, and guest-to-account progress preservation.
 
 Social features, leaderboards, certificates, and advanced simulations are outside the initial release.
 
@@ -54,7 +52,7 @@ Social features, leaderboards, certificates, and advanced simulations are outsid
 ### 3.1 First visit and onboarding
 
 1. Explain the learning experience and let the student start as a guest.
-2. Ask about interests and current experience in the supported areas.
+2. Ask about interests and current experience in the broad starter areas.
 3. Offer a skippable three-to-five-question starting-point check.
 4. Use answers to choose an initial recommendation.
 5. Open the home screen.
@@ -65,42 +63,42 @@ Skipping the check leaves understanding unassessed. An isolated diagnostic answe
 
 Present two main choices:
 
-- **Learn something new:** show a recommended concept and a short explanation of why it was chosen. Let the student choose another supported concept or open Explore.
+- **Learn something new:** show a recommended available tree node and a short explanation of why it was chosen. Let the student choose or expand another topic in the tree.
 - **Review:** show previously explored concepts and suggested reviews, while allowing the student to select a concept themselves.
 
 Show the most recent activity and a resume action when a session is unfinished. Fifteen minutes is a guide, not a cutoff; clarification and optional tasks can extend the session.
 
 ### 3.3 Learn
 
-Concept selection -> guided visual lesson -> understanding check -> feedback and results -> knowledge-map update.
+Topic-tree selection -> guided visual lesson -> understanding check -> feedback and results -> topic-tree update.
 
-- Show the topic, objectives, estimated duration, and source status before starting.
+- Show the topic, objectives, estimated duration, and available references before starting.
 - Make the tutor available throughout the lesson.
 - Save progress after meaningful actions so the student can leave and resume.
 - At the end, explain what was assessed and what remains uncertain.
 - Show the concept's previous and current learning statuses when they differ.
-- Link to the updated node in the full knowledge map.
+- Link to the updated node in the topic tree.
 
 ### 3.4 Review
 
-Concept selection -> recall questions -> targeted explanations and diagrams for gaps -> follow-up questions -> results -> knowledge-map update.
+Topic-tree selection -> recall questions -> targeted explanations and diagrams for gaps -> follow-up questions -> results -> topic-tree update.
 
 - Begin with recall rather than replaying the complete lesson automatically.
 - Let the student open the complete visual lesson at any time.
 - Give targeted feedback for gaps and offer follow-up questions.
 - Distinguish assisted practice from a fresh independent check.
 - Show the previous and current status after results, for example **developing -> demonstrated understanding** when a qualifying independent check supports that change.
-- Explain the evidence behind the change and provide a link to the updated graph node.
+- Explain the evidence behind the change and provide a link to the updated tree node.
 - If evidence does not justify a change, show the current status and remaining gap clearly.
 
-### 3.5 Explore
+### 3.5 Topic tree
 
-Enter a topic or question -> explanation -> clarification and optional assessment -> results -> knowledge-map update.
+Choose a broad root -> generate and save three child topics -> select a child to learn or expand it further -> return to the same saved tree and learning history.
 
-- Use supporting references when the library contains suitable material for the actual question.
-- Otherwise, generate content from the AI's existing knowledge and label it unverified.
-- Let the student ask follow-up questions and choose whether to attempt an assessment.
-- Keep explored topics in the knowledge map, including unsupported topics.
+- The topic tree is the sole place to browse, expand, and select learning topics; there is no separate Explore or knowledge-map screen.
+- Repeated or concurrent expansion requests return the saved children. Reject duplicate or near-duplicate suggestions against existing accessible nodes before saving.
+- Selecting a node with an existing lesson reuses it. A new lesson begins only after adequate reference passages have been saved.
+- Show actual learning status, assessed objectives, source links, related lessons, and Learn/Review actions on each relevant node.
 
 ### 3.6 Account creation and settings
 
@@ -144,9 +142,9 @@ Each supported lesson includes:
 - One optional explanation question in the student's own words.
 - One optional visual task.
 
-AI generates lessons and questions using the concept's approved reference passages and learning objectives. Save each assessment's questions and answer criteria before the student answers; do not change the key during the assessment. Label generated assessments AI-assessed even when source-grounded, unless their keys have actually received independent review. Supporting references improve traceability but do not guarantee every generated question is accurate.
+AI generates lessons and questions using the selected node's saved reference passages and learning objectives. The first four lessons can continue using their approved passages; newly discovered passages are source-backed but not independently approved. Save each assessment's questions and answer criteria before the student answers; do not change the key during the assessment. Label generated assessments AI-assessed unless their keys have actually received independent review. Supporting references improve traceability but do not guarantee every generated question is accurate.
 
-An Explore lesson offers the same assessment format, but taking its assessment is optional. Once the student chooses an assessment, all three MCQs must be answered to complete that check.
+Generated tree lessons use the same assessment format. Once the student chooses an assessment, all three MCQs must be answered to complete that check.
 
 Skipping optional tasks carries no penalty and does not count as evidence of weakness. Students can leave before completing MCQs; the lesson may be explored without having a completed assessment.
 
@@ -163,7 +161,7 @@ A correct assisted retry is useful practice but does not retroactively make the 
 
 ### 5.3 Learning statuses
 
-Use the same statuses for supported and unsupported topics:
+Use the same statuses for catalogue and generated tree lessons:
 
 - **Not assessed:** no assessment evidence and no learning activity yet; diagnostic information alone does not establish a full concept assessment.
 - **Explored:** a lesson or exploration has been opened, but there is no graded concept-assessment evidence.
@@ -183,45 +181,38 @@ Use the latest completed concept check to update the current status, taking inde
 - Keep topic choice available even when the recommendation differs from the student's preference.
 - Explain recommendation reasons in student-friendly language.
 
-## 6. Knowledge map and credibility
+## 6. Topic tree and credibility
 
-### 6.1 Knowledge-map presentation
+### 6.1 Topic-tree presentation
 
-Show an overview by area above an interactive concept graph. Area summaries report coverage and assessment activity rather than an invented overall mastery percentage.
+Show the four broad roots and only the child branches a student has requested. This tree is also the learning-history view. Summaries report coverage and assessment activity rather than an invented overall mastery percentage.
 
 Selecting a node reveals:
 
 - Its learning status and specific objectives assessed.
-- Its source status and assessment basis.
+- Its saved source links and assessment basis.
 - Assessment history and supporting answers.
-- Connected concepts and prerequisites.
+- Parent, children, and any separately reviewed prerequisites.
 - Source references and related clarification conversations.
 - Learn or Review actions.
 
-Use source status and learning status as separate attributes. Colour must not be the only way to communicate either attribute.
+Use text as well as colour for learning status. A generated parent-child link is a navigation relationship, not proof of a prerequisite.
 
-### 6.2 Unsupported topics
+### 6.2 Source and assessment evidence
 
-- Keep unsupported topics in the graph with an **unverified source** tag.
-- Allow AI-generated explanations, questions, answer criteria, and feedback.
-- Permit progression through all four learning statuses, including demonstrated understanding.
-- Label assessments **AI-assessed** and explain that the result measures performance against an AI-generated assessment whose accuracy has not been independently verified.
-- Label relationships without reviewed support as AI-suggested.
-- Passing an assessment never removes the unverified source tag.
+- Require saved, usable references for new tree lessons. When none pass the checks, do not generate a lesson from the model's prior knowledge as a silent fallback.
+- Show citations from the exact saved passages used for the lesson and questions; never accept a fabricated citation from model output.
+- Preserve the source provenance of historical sessions, including any older unverified sessions, independently of assessment outcomes.
+- Label generated assessments **AI-assessed** and explain that the result measures performance against an AI-generated assessment whose accuracy has not been independently verified.
+- Permit progression through all four learning statuses for a generated lesson, but never present a passing assessment as proof that its sources or AI-generated questions were independently reviewed.
 
-Source-grounded content is also AI-generated. Its distinguishing property is the supporting references, not the absence of AI.
+### 6.3 Automatic source discovery
 
-### 6.3 Source management
-
-- Provide an admin screen to add specific URLs, assign concepts, inspect imported material, and activate sources.
-- Import the supplied page only; whole-site crawling is outside the initial release.
-- Keep source title, URL, version where relevant, import date, and review status.
-- Retrieve relevant passages when generating lessons and tutor responses.
-- Attach citations from stored source records rather than accepting invented URLs.
-- Use curated objectives, approved reference passages, and reviewed catalogue relationships for supported concepts; generate lessons and questions from those references rather than requiring a manually authored lesson/question pack for each concept.
-- Keep source approval separate from answer-key review. Preserve AI-assessed labels for generated keys; use independently reviewed questions and keys only when that review actually occurred.
-- Mark an explanation source-grounded only when the available passages support it.
-- Use the unverified-content experience explicitly when reference coverage is insufficient.
+- Use Gemini 2.5 Flash with Google Search grounding to suggest candidate URLs. The backend, not Gemini, fetches and extracts each allowed public page and checks its relevance to the selected objective.
+- Store the source title, canonical URL, fetched date, extracted passage snapshot, and lesson citation IDs. Fetch only selected pages; do not crawl a site.
+- Retrieve bounded passages for the lesson generator and tutor. Use Gemini 3.5 Flash-Lite for the saved-passages-to-lesson call.
+- Keep automatic source checks separate from human approval and answer-key review. Preserve AI-assessed labels for generated keys; use a reviewed label only when actual independent review occurred.
+- Show a plain-language failure and retry when no permitted, sufficient passages are available. Do not substitute an unlabeled fixture or model-only answer.
 
 ## 7. Acceptance criteria and validation
 
@@ -229,14 +220,14 @@ Source-grounded content is also AI-generated. Its distinguishing property is the
 - Visual lessons support step navigation, component selection, and relevant tutor highlights.
 - The mascot remains usable with reduced motion enabled.
 - Required MCQs and optional tasks follow the agreed completion rules.
-- Review begins with recall, addresses gaps, shows results, and then shows the map update with its evidence.
-- Unsupported topics can reach demonstrated understanding while retaining their unverified source tag and AI-assessed label.
-- Assessment performance never changes source status automatically.
+- Review begins with recall, addresses gaps, shows results, and then updates the same topic tree with its evidence.
+- Generated tree lessons can reach demonstrated understanding while retaining their AI-assessed label and source citations.
+- Assessment performance never changes source provenance automatically.
 - Refresh and resume preserve completed answers and do not regenerate saved lessons unnecessarily.
 - Guest progress survives sign-in, including sign-in to an existing account.
 - Private learning records cannot be accessed by another user.
 - Displayed citations resolve to the stored material used.
-- Supported lessons and questions are generated from approved stored references; assessment keys remain fixed during the round, private, and labelled according to their actual review basis.
+- Lessons and questions are generated from saved, checked reference passages; assessment keys remain fixed during the round, private, and labelled according to their actual review basis.
 - Incorrect answers, valid alternative wording, missing references, grading manipulation, invalid AI output, and service failures are tested.
 - Failed generation or grading does not falsely update understanding.
 

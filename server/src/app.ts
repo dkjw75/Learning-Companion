@@ -1,15 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import express, { type ErrorRequestHandler } from 'express';
-import { type ApiErrorCode, type Health, type SuccessEnvelope, completeOnboardingSchema, errorEnvelopeSchema } from '@learning-companion/shared';
+import { type ApiErrorCode, type Health, type SuccessEnvelope, completeOnboardingSchema, errorEnvelopeSchema, hintRequestSchema, submitAnswerRequestSchema } from '@learning-companion/shared';
 import { createProfileService, type ProfileService } from './auth.js';
 import { ApiError } from './errors.js';
 import type { LocalRunsService } from './ai-runs.js';
 import { AiOperationError } from './ai.js';
 import type { GenerationService } from './generation.js';
+import { createAssessmentService, type AssessmentService } from './assessment.js';
 import { z } from 'zod';
 
 export function createApp(profileService: ProfileService = createProfileService(),
-  localRuns?: LocalRunsService, generationService?: GenerationService) {
+  localRuns?: LocalRunsService, generationService?: GenerationService,
+  assessmentService: AssessmentService = createAssessmentService()) {
   const app = express();
   app.disable('x-powered-by');
   app.use((_req, res, next) => {
@@ -91,6 +93,24 @@ export function createApp(profileService: ProfileService = createProfileService(
       const currentStep = await generationService.setPosition(profile.userId, req.params.id, parsed.data.step);
       if (currentStep === null) throw new ApiError(404, 'NOT_FOUND', 'Lesson step not found.');
       res.json({ data: { currentStep } });
+  });
+  app.post('/api/rounds/:id/answers', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const token = tokenFrom(req.get('Authorization'));
+    if (!z.uuid().safeParse(req.params.id).success) throw new ApiError(404, 'NOT_FOUND', 'Quiz not found.');
+    const parsed = submitAnswerRequestSchema.safeParse(req.body);
+    if (!parsed.success) throw new ApiError(400, 'INVALID_INPUT', 'Choose an answer from this question.');
+    await profileService.getProfile(token);
+    res.json({ data: await assessmentService.submit(token, req.params.id, parsed.data) });
+  });
+  app.post('/api/rounds/:id/hints', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const token = tokenFrom(req.get('Authorization'));
+    if (!z.uuid().safeParse(req.params.id).success) throw new ApiError(404, 'NOT_FOUND', 'Quiz not found.');
+    const parsed = hintRequestSchema.safeParse(req.body);
+    if (!parsed.success) throw new ApiError(400, 'INVALID_INPUT', 'Question not found.');
+    await profileService.getProfile(token);
+    res.json({ data: await assessmentService.hint(token, req.params.id, parsed.data.questionId, parsed.data.requestId) });
   });
   app.use((_req, _res, next) => next(new ApiError(404, 'NOT_FOUND', 'Resource not found.')));
   const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _next) => {

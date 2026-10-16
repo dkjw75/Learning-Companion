@@ -83,7 +83,7 @@ describe('Stage 6 generated lessons', () => {
       reducedMotion: false, createdAt: '2026-10-12T00:00:00Z' };
     const result = validateGenerated(generated, input);
     const saved = { id: result.lesson.id, conceptId, generationState: 'ready' as const,
-      lesson: result.lesson, round: result.round, citations: result.citations, currentStep: 0 };
+      lesson: result.lesson, round: result.round, citations: result.citations, currentStep: 0, attempts: [], assistedQuestionIds: [] };
     const start = vi.fn(async () => saved);
     const get = vi.fn(async (owner: string, id: string) => owner === profile.userId && id === saved.id ? saved : null);
     const setPosition = vi.fn(async (_owner: string, _id: string, step: number) => step < 4 ? step : null);

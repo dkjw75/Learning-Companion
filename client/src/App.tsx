@@ -7,6 +7,7 @@ import { useSession } from '@/auth/session-context';
 import { BackgroundAsciiWake } from '@/components/ui/background-ascii-wake';
 import { ButtonUiLink } from '@/components/ui/button-ui';
 import { LessonView } from '@/views/LessonView';
+import { QuizView } from '@/views/QuizView';
 
 export function App() {
   const { session, profile, status } = useSession();
@@ -30,6 +31,7 @@ export function App() {
         <Route path="/home" element={gated(<HomeView />)} />
         <Route path="/learn" element={gated(<CatalogueView />)} />
         <Route path="/learn/:sessionId" element={gated(<LessonView />)} />
+        <Route path="/learn/:sessionId/quiz" element={gated(<QuizView />)} />
         <Route path="/map" element={gated(<CatalogueView map />)} />
         <Route path="*" element={<>
           <h1 className="mb-3 text-3xl font-semibold">Page not found</h1>

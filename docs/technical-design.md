@@ -1,6 +1,6 @@
 # Proposed Technical Design
 
-Version 1.2 | 8 October 2026 | Implementation proposal | Source-backed Gemini generation from Stage 5
+Version 1.3 | 16 October 2026 | Implementation proposal | On-demand topic tree and two-model source discovery
 
 Read [PRD.md](../PRD.md) for product behaviour and [build-plan.md](build-plan.md) for implementation order. This proposal fixes practical defaults so an implementing agent does not need to invent the architecture. It does not represent an implemented or deployed application.
 
@@ -28,7 +28,7 @@ LearningCompanion/
 - **Client state:** TanStack Query for API-backed data and request state; React Context for the authenticated session; local React state/reducers for lesson navigation and transient interactions. Supabase remains the persisted source of learning history. Do not introduce a second global state library by default.
 - **AI:** Gemini through Google's `@google/genai` SDK, called only by Express.
 - **Database:** Supabase Postgres; Supabase Auth for guest and permanent identities; private Supabase Storage for retained source files where needed.
-- **Retrieval:** concept-filtered Postgres full-text search over imported passages. RAG does not require vector search. At 12 supported concepts, use explicit concept mappings and full-text retrieval first; embeddings and pgvector are a later extension, not an initial dependency.
+- **Retrieval:** concept-filtered Postgres full-text search over saved passages. Stage 13 adds bounded on-demand web discovery and private fetched-passage snapshots; RAG does not require vector search or a manually expanded catalogue.
 - **Visuals:** controlled React components and SVG. Add animation libraries only when selected components require them; preserve the reduced-motion experience. No separate graph database, generated HTML execution, or raster-generation dependency.
 - **Tests:** Vitest, React Testing Library with user-event and jest-dom, Supertest, and Playwright for selected end-to-end journeys.
 - **Proposed hosting:** two Vercel projects from the same repository: Vite frontend and Express backend. Rewrite frontend `/api/*` requests to the backend and route non-API paths to the SPA. Local development uses Vite's API proxy.
@@ -39,11 +39,11 @@ Pin compatible package versions in the lockfile during Stage 1. When resuming an
 
 ### AI model default
 
-Set `GEMINI_MODEL=gemini-3.5-flash-lite` as the initial cost-conscious model. The current [official model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite) lists structured-output support. Verify actual access and structured-output behaviour using the project's own credentials before enabling generated lessons. Model availability and quota are not proven by this document.
+Keep `GEMINI_MODEL=gemini-3.5-flash-lite` for lesson and assessment generation. In Stage 13 set a separate server-only `GEMINI_SEARCH_MODEL=gemini-2.5-flash` for candidate-source discovery with Google Search grounding. Google's [pricing table](https://ai.google.dev/gemini-api/docs/pricing) currently lists Free-tier generation for 3.5 Flash-Lite and Free-tier Search grounding for 2.5 Flash, shared with 2.5 Flash-Lite up to 500 grounded requests per day; these are provider limits, not a promise of this project's access or future pricing. Verify both models and grounding with the project's actual key before enabling on-demand lessons. Do not set up paid billing automatically.
 
 Use `GoogleGenAI` with stateless generation through `models.generateContent`, JSON output, and a supplied response schema. Do not use provider-managed conversation history; the application selects the context from Supabase. Validate JSON again with Zod and business rules. Google's [structured-output documentation](https://ai.google.dev/gemini-api/docs/generate-content/structured-output) supports this interface; syntactically valid JSON is not a factual accuracy check.
 
-Keep the model configurable. Do not silently substitute another provider or model. A model change requires rerunning lesson, grading, and tutor evaluation cases.
+Keep both model IDs configurable. The same `GEMINI_API_KEY` can be used for both models if the project's access permits them; the backend chooses the configured model for each operation. Do not silently substitute another provider or model. A model change requires rerunning source-discovery, lesson, grading, and tutor evaluation cases.
 
 ## 2. Frontend screens and visual interaction
 
@@ -55,16 +55,14 @@ All screens follow the user-facing interface rule in project AGENTS.md. Infrastr
 - `/onboarding`: interests, experience, and optional diagnostic.
 - `/home`: Learn, Review, resume, and recommendation reasons.
 - `/learn/:sessionId`: lesson player, tutor, and assessment.
-- `/review`: concept selection; starts a review session in the shared player.
-- `/explore`: topic entry and existing explorations; generated sessions use the shared player.
-- `/map`: area overview, graph, node details, and learning history.
+- `/review`: redirect existing links to the topic tree's review selection; do not build a separate topic picker.
+- `/topics`: the one expandable topic tree, node details, lesson selection, and learning history. Redirect existing `/map` links here after Stage 9; do not keep a second map screen.
 - `/auth/callback`: account linking or sign-in completion and guest-data merge.
 - `/settings`: interests, reduced motion, sign-out, and deletion.
-- `/admin/sources`: admin-only source import and approval.
 
-Use the same session player for Learn, Review, and Explore. A session's mode determines its initial screen and assessment ordering.
+Use the same session player for Learn and Review on both existing catalogue concepts and generated tree nodes. A session's mode determines its initial screen and assessment ordering.
 
-Use a deterministic SVG graph layout: one column per area, catalogue nodes in catalogue order, then private nodes in creation order; place unclassified explorations in an Other column. Provide zoom controls, horizontal scrolling on narrow screens, selectable nodes, and an equivalent list view. Draw directional prerequisite edges and labelled related edges. Avoid a force-simulation dependency in v1.
+Use a deterministic parent-child tree rooted in Software Development, AI Engineering, Cybersecurity, and Cloud Computing. Render only saved descendants; each expanded node has at most three children. Provide keyboard navigation and an equivalent list view on narrow screens. A parent-child link means a browsing branch, not a reviewed prerequisite. Preserve reviewed catalogue relationships separately; avoid a force-simulation dependency.
 
 ### Layout defaults
 
@@ -82,10 +80,10 @@ The PRD specifies behaviour; approved Stitch screens and design rules specify ap
 - Check each selected component's source, licence, dependencies, and React/Tailwind compatibility. Retain required notices and record provenance in `design/component-references.md`. Components are maintained locally after import, rather than relying on a hosted runtime widget.
 - Adapt imports, theme tokens, and Tailwind 3-era conventions to the Tailwind 4 setup where needed. Use the primitive and animation packages required by that component, and avoid duplicate UI systems. Components tied to Next.js need their routing/image/server assumptions adapted to this Vite SPA.
 - Connect UI to the existing Express API and shared DTOs. Sample component data must be replaced with actual application data; visual components never determine assessment results or learning status.
-- Keep lesson diagrams, assessment interactions, and knowledge-map layout as controlled application components. A generic progress widget must not introduce an unsupported mastery percentage.
+- Keep lesson diagrams, assessment interactions, and topic-tree layout as controlled application components. A generic progress widget must not introduce an unsupported mastery percentage.
 - Compare implemented screens with approved references in desktop and mobile browser views. Verify focus, keyboard operation, readable contrast, and reduced motion after adapting imported components.
 
-Use TanStack Query keys scoped to the authenticated user and resource. Clear private cached data when identity changes, and invalidate home, map, and concept-history queries after a committed progress update. Do not store answer keys in React Context, component state, or the query cache.
+Use TanStack Query keys scoped to the authenticated user and resource. Clear private cached data when identity changes, and invalidate home, tree, and concept-history queries after a committed progress update. Do not store answer keys in React Context, component state, or the query cache.
 
 ### Diagram contracts
 
@@ -115,7 +113,7 @@ type LessonStep = {
 
 Each generated lesson contains four to six steps, at most two diagrams, no more than eight nodes per diagram, and captions of at most 100 words per step. Validate unique IDs, edge endpoints, rectangular table rows, and every highlight/citation reference. Layout coordinates come from the renderer, not Gemini. Render labels as text; never interpret them as HTML, CSS, SVG markup, or JavaScript.
 
-Every lesson also requires one `runningExample` (30-300 characters), shared by its diagrams and step explanations. Pick a concrete situation appropriate to the topic, with illustrative names, values, requests, records, code or states. Every node requires a visible `example` (at most 200 characters); tables require nonempty concrete rows. Flow and relationship diagrams require at least two connected nodes and one directed, labelled edge. Every step must highlight a valid node/edge, or at least one zero-based table row. Keep labels compact (nodes 50 characters, edges 60). The generation prompt asks all worked examples to follow the same situation, while the application controls the visual standard: navy canvas, coloured cards, inset example values, actual SVG connectors, clickable labels, current-step emphasis, and reduced-motion-safe flow animation. The desktop diagram sits above the step explanation. This is a shared contract for every concept ID and both source modes, including future private unsupported topics; no future generation endpoint may bypass `lessonSchema` or introduce a weaker diagram format. Unsupported-topic generation remains Stage 13 scope.
+Every lesson also requires one `runningExample` (30-300 characters), shared by its diagrams and step explanations. Pick a concrete situation appropriate to the topic, with illustrative names, values, requests, records, code or states. Every node requires a visible `example` (at most 200 characters); tables require nonempty concrete rows. Flow and relationship diagrams require at least two connected nodes and one directed, labelled edge. Every step must highlight a valid node/edge, or at least one zero-based table row. Keep labels compact (nodes 50 characters, edges 60). The generation prompt asks all worked examples to follow the same situation, while the application controls the visual standard: navy canvas, coloured cards, inset example values, actual SVG connectors, clickable labels, current-step emphasis, and reduced-motion-safe flow animation. The desktop diagram sits above the step explanation. This is a shared contract for every concept ID and both historical source modes, including future private tree topics; no generation endpoint may bypass `lessonSchema` or introduce a weaker diagram format. On-demand tree lessons arrive in Stage 13.
 
 Structural validation enforces the data and references, not factual accuracy or whether an example teaches well. Review representative real outputs against their passages and inspect the rendered diagrams. Older snapshots without this contract remain stored but are excluded from Resume so students can start a new lesson; never invent example data for them.
 
@@ -123,7 +121,7 @@ Lesson text standard: show the caption, two explanatory paragraphs, a technical 
 
 An operator may enrich named existing sessions using `npm run lesson:enrich -- <session UUID> ...` after building. Gemini receives only the public lesson and its saved cited passages and returns step IDs plus caption, explanation, workedExample and commonMistake. Validate the complete response, preserve step order and all non-text context, reserve usage under existing limits, and atomically update the same session only if its saved lesson still matches the input. Never regenerate its diagrams, sources, assessment or progress. Migration `20261016000200_lesson_text_enrichment.sql` narrows snapshot immutability to permit these four text fields while retaining all identity, diagram, step-reference and source protections; client database update permissions remain unchanged. The operation creates normal private request/usage tracking, not new lesson or assessment rows. Unsupported sessions retain their source label and the same text/diagram standard.
 
-For supported concepts, Gemini generates diagram data, captions, a short explanation, a worked example, and a corrected common mistake for every step from approved source passages and curated learning objectives. The React renderer controls layout, reveals the extra step details on demand, and accepts only the validated diagram contract. Require source references for instructional relationships and evaluate representative diagrams against the passages; generated diagram structure is not automatically reviewed. Do not let generation rewrite reviewed catalogue prerequisites. An existing independently reviewed diagram may be reused as an optional base. Unsupported topics use the same structural validation and retain the unverified label.
+Gemini generates diagram data, captions, a short explanation, a worked example, and a corrected common mistake for every step from the lesson's saved source passages and objectives. The React renderer controls layout, reveals the extra step details on demand, and accepts only the validated diagram contract. Require source references for instructional relationships and evaluate representative diagrams against the passages; generated diagram structure is not automatically reviewed. Do not let generation rewrite reviewed catalogue prerequisites. An existing independently reviewed diagram may be reused as an optional base. New tree topics use the same structural validation and cite their automatically fetched passages.
 
 ### Mascot and visual tasks
 
@@ -139,12 +137,14 @@ Use UUID primary keys and UTC timestamps. Store each historical result and the l
 
 - `profiles`: `user_id`, selected interest areas, experience level, onboarding completion, structured diagnostic evidence, timezone, reduced-motion preference, timestamps.
 - `admin_users`: privileged user IDs, populated through a protected administrative operation. Users cannot grant themselves admin access.
-- `concepts`: slug, title, area, objectives, catalogue order, supported flag, optional owning user for private exploratory concepts, timestamps. Catalogue concepts are shared; unsupported additions are private to their creator.
+- `concepts`: the existing shared catalogue and private lesson concepts, with objectives, ownership, and timestamps. Keep the original 12 and their historical sessions; generated tree lessons use owner-scoped concepts and can reuse a matching existing concept rather than creating a duplicate.
+- `topic_tree_nodes` (Stage 13 forward migration): four shared root IDs plus owner-scoped children with parent ID, normalized title/aliases, focused objectives, creation order, and expansion state. An expanded parent has exactly three stable children; enforce per-owner/parent uniqueness and one idempotent expansion transaction. Validate all three before insertion; an invalid or duplicate proposal may receive one repair, then fail without a partial branch. Check semantic near-duplicates against accessible nodes. Tree links do not assert prerequisites.
 - `concept_edges`: source and target concept IDs, relation type (`prerequisite` or `related`), reviewed flag, optional owner, supporting source IDs. AI-suggested edges may only target concepts the user can access.
 - `content_packs`: optional independently reviewed base lessons/assessment packs, with concept ID, immutable version, private metadata, review state, reviewer, and review date. Preserve this Stage 2 table for genuinely reviewed material and optional fallbacks; source-grounded generated sessions do not require an active reviewed pack. Never mark generation as reviewed to satisfy an existing pack constraint. Serve a public projection without private keys/rubrics.
-- `sources`: canonical URL, title, host, reuse/permission review, supported-concept mappings, active revision, status, timestamps.
+- `sources`: existing approved catalogue sources, with canonical URL, title, host, reuse/permission review, active revision, status, and timestamps.
+- `discovered_source_snapshots` (Stage 13 forward migration): owner, selected tree node, canonical URL, title, fetched/version timestamp, extracted bounded text, chunk IDs, and source-check result. Keep fetched material private to its owner and retain cited snapshots for historical lessons; automatic retrieval never changes an existing approved source's review state.
 - `source_revisions`: source ID, content hash, fetched date, source version metadata, review/approval dates, optional Storage path.
-- `source_chunks`: revision ID, section heading, ordinal, extracted text, concept mappings, and indexed English `tsvector`.
+- `source_chunks`: approved catalogue chunks; Stage 13 may reuse this chunk shape or add private discovered chunks with equivalent immutable citation IDs and bounded indexed text. Do not make unreviewed fetched pages appear as approved revisions.
 - `question_bank`: optional independently reviewed MCQ prompts, options, objective IDs, source references, difficulty, and question-family ID. Unreviewed generated questions belong in per-user assessment-round snapshots, not the reviewed public bank. Correct keys and grading explanations remain server-private.
 - `lesson_sessions`: owner, concept, mode, generation state, public lesson JSON, source mode, citation snapshot, content version, current step, completion state, and timestamps.
 - `assessment_rounds`: owner, session, round kind (`initial`, `review`, or `confirmation`), public question snapshot, source mode, assessment basis (`reviewed_key` or `ai_generated_key`), completion timestamp, and qualification result.
@@ -171,53 +171,51 @@ Create a guest with Supabase `signInAnonymously()`; its anonymous auth UUID owns
 
 For a new account, link Google using `linkIdentity()` with manual identity linking enabled. Keeping the same UUID preserves progress. Supabase documents this flow in [anonymous sign-ins](https://supabase.com/docs/guides/auth/auth-anonymous).
 
-For an existing Google account, issue a cryptographically random, single-use, ten-minute merge ticket while the guest is still authenticated. After existing-account sign-in, the backend verifies the permanent account and consumes the ticket in a transaction. Move private sessions, attempts, messages, and exploratory concepts to the account; union interests; preserve permanent-account settings; and recompute progress from combined history. Reject expired, reused, or forged tickets. Never merge based on an unverified user ID or email. Supabase notes that existing-account conflicts require application-specific handling in its [identity-conflict guidance](https://supabase.com/docs/guides/auth/auth-anonymous#resolving-identity-conflicts).
+For an existing Google account, issue a cryptographically random, single-use, ten-minute merge ticket while the guest is still authenticated. After existing-account sign-in, the backend verifies the permanent account and consumes the ticket in a transaction. Move private tree nodes, source snapshots, sessions, attempts, messages, and lesson concepts to the account; reconcile duplicate titles without discarding their lesson histories; union interests; preserve permanent-account settings; and recompute progress from combined history. Reject expired, reused, or forged tickets. Never merge based on an unverified user ID or email. Supabase notes that existing-account conflicts require application-specific handling in its [identity-conflict guidance](https://supabase.com/docs/guides/auth/auth-anonymous#resolving-identity-conflicts).
 
 ## 4. Content importing and retrieval
 
 ### Reference preparation and generated content
 
-Stage 4 prepares reference material under `content/`: source manifests, selected approved text, source versions, curated objectives/aliases, and objective-to-passage mappings for the first four concepts. Local scripts chunk and load this material into Supabase. Finished lessons, manually authored diagrams, and nine manually written MCQs per concept are no longer required before generation.
+Stage 4 prepared reference material under `content/`: source manifests, selected approved text, source versions, curated objectives/aliases, and objective-to-passage mappings for the first four concepts. Local scripts chunk and load this material into Supabase. Those lessons remain a working fallback and regression set, not a gate requiring manual reference work for every future tree node.
 
 Stage 5 introduces the server-only Gemini adapter and a live source-backed smoke test. Stage 6 provides production retrieval and generation: Express selects passages from Supabase, sends them with objectives and learner context to Gemini, validates the lesson/questions, saves the snapshots and private keys, and returns public DTOs to React. The player is implemented in Stage 7. Gemini does not connect directly to the database or browser.
 
-Generate an initial three-MCQ set when creating a lesson assessment. Generate Review and confirmation sets on demand in Stage 10 and persist each once. Every set includes an application question and covers the selected objectives. Require each question's correct answer and feedback criteria to cite the retrieved passages; require one unambiguous correct option. Question-family IDs, normalized prompt comparison, and an explicit near-duplicate check prevent the same question being presented as new independent evidence merely by changing IDs. Optional explanation rubrics and visual-task keys arrive in Stage 14.
+Generate an initial three-MCQ set when creating a lesson assessment. Generate Review and confirmation sets on demand in Stage 10 and persist each once. Every set includes an application question and covers the selected objectives. Require each question's correct answer and feedback criteria to cite the saved passages; require one unambiguous correct option. Question-family IDs, normalized prompt comparison, and an explicit near-duplicate check prevent the same question being presented as new independent evidence merely by changing IDs. Optional explanation rubrics and visual-task keys arrive in Stage 14.
 
 Validate schemas, option/key membership, objective IDs and coverage, diagram references, and citation membership before storing or serving generated content. Reject malformed, out-of-scope, or insufficiently sourced output with a visible failure; a second model agreeing is not independent factual review. Record representative source-based output evaluations, including incorrect/ambiguous keys and diagram relationships. These evaluations do not certify every future generated question.
 
-Source approval and answer-key review are separate. Generated questions use `assessmentBasis: 'ai_generated_key'` even when `sourceMode: 'source_grounded'`; show AI-assessed with source references. Use `reviewed_key` only for keys that were actually independently reviewed, with reviewer/date recorded. Optional reviewed packs and banks can provide audited examples or fallbacks, but are not a mandatory input to source-backed generation.
+Source provenance and answer-key review are separate. Generated questions use `assessmentBasis: 'ai_generated_key'` even when `sourceMode: 'source_grounded'`; show AI-assessed with source references. `source_grounded` means the actual cited passages were saved and checked for coverage, not that a person approved them. Use `reviewed_key` only for keys that were actually independently reviewed, with reviewer/date recorded. Optional reviewed packs and banks can provide audited examples or fallbacks, but are not a mandatory input to source-backed generation.
 
-Keep the Stage 2 migration and RLS boundaries intact. Reconcile future generation requirements through forward migrations in Stage 6 if necessary; do not retroactively weaken reviewed-pack approval or expose draft question-bank records. Determine supported lesson availability from approved objective coverage and generation readiness rather than requiring a hand-authored active pack.
+Keep existing Stage 2 migrations and RLS boundaries intact. Stage 13 uses forward migrations for private tree nodes, private lesson-capable concepts, and discovered-source snapshots. Reconcile the current private-concept `content_available` constraint and approved-only retrieval through those forward migrations so a checked fetched passage can serve a private lesson without being marked approved. Do not retroactively weaken reviewed-pack approval or expose draft question-bank records. A lesson is available only when saved passages adequately cover its objective and generation succeeds.
 
-### Single-page URL ingestion
+### On-demand source discovery and single-page ingestion (Stage 13)
 
-The admin creates a draft source and assigns concepts. Import the exact approved URL using the backend importer, extract the article body while preserving useful headings, tables, and code examples, then preview it before approval.
+After a student selects a new tree node, ask `gemini-2.5-flash` with Google Search grounding for a bounded set of relevant candidate references. Read candidate URLs from grounding metadata, not from arbitrary generated prose. One search response may contain several searches, and grounding may return no usable URL. Never let Gemini connect to the database or fetch a URL on the application's behalf. The backend selects pages to fetch and decides whether the extracted passages cover the node's focused objective.
 
-Initial accepted input is public HTML from an allowlisted host. Configure `SOURCE_ALLOWED_HOSTS` initially for `developer.mozilla.org`, `www.postgresql.org`, and `developers.google.com`. An allowed host permits fetching; it does not substitute for checking reuse permissions or content quality. Exclude W3Schools ingestion by default because its [terms](https://www.w3schools.com/about/about_copyright.asp) prohibit crawling/scraping and large-scale copying; it can be linked as further reading.
+Accept only public HTML from explicitly allowlisted hosts with recorded reuse/permission checks. Start with the existing `developer.mozilla.org`, `www.postgresql.org`, and `developers.google.com` hosts; Stage 13 must add suitable official documentation hosts for all four broad roots after checking their terms, or leave a root unavailable until adequate sources work. An allowed host is not proof of content quality or human approval. Exclude W3Schools ingestion by default because its [terms](https://www.w3schools.com/about/about_copyright.asp) prohibit crawling/scraping and large-scale copying; it can be linked as further reading.
 
-Reject credentials in URLs, non-HTTPS schemes, private/local IP ranges, and unapproved hosts. Check DNS results, pin the approved connection target, and validate each manually followed redirect. Limit redirects to three, HTML size to 2 MB, and fetch time to ten seconds. Do not execute webpage scripts, bypass logins, or crawl linked pages. Fail visibly when content cannot be extracted.
+Reject credentials in URLs, non-HTTPS schemes, private/local IP ranges, and unapproved hosts. Check DNS results, pin the approved connection target, and validate each manually followed redirect. Limit redirects to three, HTML size to 2 MB, and fetch time to ten seconds. Do not execute webpage scripts, bypass logins, or crawl linked pages. Try only a small bounded number of candidate pages. Fail visibly when none can be extracted or support the objective.
 
-Use `@mozilla/readability` with `jsdom` in non-script-executing mode for HTML extraction. Bound extracted text to 100,000 characters; ask for a narrower source rather than silently discarding excess content. Split by heading into approximately 250-450-word chunks, keeping examples intact and using at most 50 words of overlap. Store a new revision and mark it pending approval. Atomically activate the approved revision; retain old revisions referenced by historical sessions.
-
-PDFs or Markdown reference material can be included through a local reference-import script with approved extracted text. A general PDF-upload UI is not part of v1.
+Use `@mozilla/readability` with `jsdom` in non-script-executing mode for HTML extraction. Bound extracted text to 100,000 characters; ask for a narrower source rather than silently discarding excess content. Split by heading into approximately 250-450-word chunks, keeping examples intact and using at most 50 words of overlap. Save private immutable passage/citation snapshots for the learner's lesson. Reuse them on resume and review; do not mark them human-approved or overwrite a historical citation when a page changes. PDF/upload administration is outside this flow.
 
 ### Retrieval at generation time
 
-1. Resolve the selected concept and objectives; prefer explicitly mapped approved chunks.
-2. For clarification, search mapped chunks plus approved material for directly related concepts using Postgres full-text ranking.
+1. Resolve the selected tree node and focused objectives. For an existing lesson, use its saved citation snapshot; for one of the four original concepts, existing approved chunks remain available. For a new child, use only successfully fetched and checked private chunks.
+2. For clarification, search that learner's saved chunks and accessible approved material for directly related concepts using Postgres full-text ranking.
 3. Select at most six chunks, with a combined ceiling of 12,000 characters, keeping source IDs and headings.
-4. Provide those passages, curated objectives, and relevant learner evidence to Gemini to generate a lesson or assessment. Include reviewed base content only when it actually exists.
+4. Provide those passages, the node's validated objectives, and relevant learner evidence to Gemini 3.5 Flash-Lite to generate a lesson or assessment. Include reviewed base content only when it actually exists.
 5. Validate cited chunk IDs against the retrieved set and construct displayed links from stored URLs.
 
-For the small catalogue, a supported lesson uses a curated objective-to-source mapping rather than relying solely on a search-score threshold. A tutor answer without adequate references is explicitly unverified. Source support is decided per response; having a source somewhere for a topic is insufficient.
+The four original concepts keep their curated objective-to-source mapping. A new child must pass bounded coverage checks on fetched text before generation; a source URL alone is insufficient. A tutor answer without adequate saved references must say so rather than invent a sourced claim.
 
-Citation-ID validation establishes traceability, not semantic correctness. Approved source material and representative generated-output evaluations support reliability; unreviewed generated lessons/questions retain their AI provenance. Do not advertise every generated response as independently verified.
+Citation-ID validation establishes traceability, not semantic correctness. Representative generated-output evaluations support reliability; automatically sourced lessons and questions retain their AI provenance. Do not advertise every generated response as independently verified.
 
 ## 5. AI calls, assessment, and recommendation rules
 
 ### Bounded AI operations
 
-Use four separate prompts/contracts: lesson generation/adaptation, assessment generation for supported or unsupported topics, tutor response, and explanation grading. Treat student text and reference passages as data, not system instructions. Generate questions before assessment submission; never ask Gemini to invent or revise the answer key while grading a student's MCQ response.
+Use separate bounded prompts/contracts for three-child tree expansion, grounded source discovery, lesson generation/adaptation, assessment generation, tutor response, and explanation grading. Treat student text and fetched reference passages as data, not system instructions. Generate questions before assessment submission; never ask Gemini to invent or revise the answer key while grading a student's MCQ response.
 
 Tutor output is `{ answer, sourceMode, citationChunkIds, highlightNodeIds, highlightEdgeIds, suggestedClarification }`. Grading output is `{ criterionResults, feedback, possibleMisconceptions }`. Only the server computes learning statuses; Gemini never returns an authoritative progress update.
 
@@ -225,14 +223,14 @@ Tutor input includes current lesson/step, retrieved passages, concise objective-
 
 For each operation, reserve usage and insert an idempotency record before calling Gemini. Store only validated output. A repeated request returns the existing result or operation state. Disable automatic provider retries; permit one bounded schema-repair call after a completed but invalid response, counted as another AI call. On an ambiguous timeout, mark the operation failed/uncertain instead of automatically issuing another paid call.
 
-Suggested defaults: 25-second per-call timeout, 6,000 output tokens for lesson generation, 3,000 for assessment generation, and 1,500 for tutor/grading responses. Start with configurable daily limits of 20 AI calls per guest, 60 per permanent user, and 300 across the deployment; count repair calls. Reserve quotas transactionally in Postgres, not process memory. Use Asia/Singapore calendar days for these v1 limits. An already completed response remains retrievable after the limit is reached.
+Keep bounded timeouts and output tokens: 25 seconds per call, 6,000 output tokens for lesson generation, 3,000 for assessment generation, and 1,500 for tutor/grading responses. Stage 13 must also bound one expansion to three children and one lesson's search/page attempts. The existing 20/60/300 daily app-call defaults were chosen before the personal/tester tree flow; revise or disable those restrictive defaults in Stage 13, while retaining transactional operation accounting, idempotency, and per-action bounds. Stay within the project's actual provider Free-tier limits; do not enable billing or silently issue paid retries. Already saved output remains retrievable after a limit is reached.
 
 Show a retry action for failed operations. Reopen an already saved valid lesson without another generation call. A genuinely reviewed base lesson may be offered as an explicitly labelled fallback if one exists; there is no mandatory reviewed fallback in the new reference-first flow. For a first generation with no valid saved/reviewed content, show the failure. Never substitute a successful-looking fixture or grade.
 
 ### Assessment mechanics
 
-- For supported concepts, generate questions and private keys from retrieved approved passages, validate them, and save them once per assessment round. Retain source-grounded and AI-assessed labels unless the keys actually received independent review. Independently reviewed sets may be selected when available.
-- For unsupported topics, generate and save questions/keys with the same structural validation, while retaining unverified source and AI-assessed labels.
+- For existing catalogue and newly sourced tree lessons, generate questions and private keys from the lesson's saved passages, validate them, and save them once per assessment round. Retain citations and AI-assessed basis unless the keys actually received independent review. Independently reviewed sets may be selected when available.
+- Preserve historical unverified sessions and their labels, but do not start a new tree lesson without sufficient saved references.
 - MCQs and visual tasks are graded deterministically against stored keys. Optional explanations use the stored rubric and Gemini feedback; uncertain grading is returned as inconclusive and does not manufacture evidence.
 - Save each question's first response and assistance separately. A retry or question from the same family is practice, not a new independent answer.
 - During an active assessment, tutor help for a question marks it assisted. Track the active question on the server; client omission must not erase that flag. Lesson clarification before the assessment is ordinary instruction.
@@ -242,17 +240,17 @@ Show a retry action for failed operations. Reopen an already saved valid lesson 
 - Use the latest completed initial/review/confirmation round for current status. Partial activity creates `developing` only when no earlier completed result exists. Preserve completed status during an abandoned partial review.
 - Never change source status because an assessment passed. Historical session source modes remain unchanged even after a source is added later.
 
-Return `progressUpdate: { conceptId, previousStatus, currentStatus, changed, evidenceRoundId, sourceMode, assessmentBasis }` with final results. Both Learn and Review render this update and invalidate cached home/map queries. This explicitly supports a Review change from developing to demonstrated understanding.
+Return `progressUpdate: { conceptId, previousStatus, currentStatus, changed, evidenceRoundId, sourceMode, assessmentBasis }` with final results. Both Learn and Review render this update and invalidate cached home/tree queries. This explicitly supports a Review change from developing to demonstrated understanding.
 
 ### Recommendations
 
-Keep path selection deterministic and explainable. Gemini personalises teaching; it does not freely rewrite the catalogue graph.
+Keep recommendations deterministic and explainable. Gemini proposes children when asked, but it does not freely rewrite an existing tree, reviewed catalogue prerequisites, or learning status.
 
-For Learn, prioritize an unexplored supported concept in the selected area whose prerequisites have been explored. Break ties by catalogue order, then suggest adjacent interests when the area is exhausted. If a prerequisite has confirmed gaps, offer it as a review without preventing the chosen lesson.
+For Learn, prioritize an available unexplored node in an interest area; recommend expanding a relevant branch only when the student chooses to do so. Use reviewed prerequisites where present, but never infer readiness from a generated parent-child link. If a prerequisite has confirmed gaps, offer it as a review without preventing the chosen lesson.
 
 For Review, prioritize developing concepts, then concepts never reviewed, then demonstrated concepts due for recall. Suggested recall intervals after independent success are 1, 3, and 7 days; a completed failed check resets the suggested interval to one day. These are simple scheduling defaults, not a validated forgetting model.
 
-Unsupported concepts remain selectable and can be recommended within the student's own explorations with the unverified label. Their results do not rewrite reviewed prerequisite edges or silently determine readiness for the supported curriculum.
+Private generated nodes remain selectable only by their owner. Their results do not rewrite reviewed prerequisite edges or silently determine readiness for a catalogue concept.
 
 ## 6. HTTP interface
 
@@ -270,9 +268,11 @@ All routes are under `/api`. Use JSON request bodies, schema validation, ownersh
 
 ### Learning
 
-- `GET /concepts`: accessible catalogue/private concepts, area filters, and per-user progress.
+- `GET /concepts`: accessible existing catalogue/private lesson concepts and per-user progress.
+- `GET /topics`: four roots and the caller's saved children, expansion state, lesson availability, and progress.
+- `POST /topics/:id/expand`: `{ requestId }`; generates and persists exactly three distinct children once, or returns the saved children. Check owner access and duplicate/concurrent requests.
 - `GET /recommendations`: separate Learn and Review choices with reason codes and display text.
-- `POST /sessions`: `{ conceptId, mode: 'learn' | 'review', requestId }`; returns a saved session with generation state.
+- `POST /sessions`: `{ conceptId, mode: 'learn' | 'review', requestId }`; Stage 13 accepts an owned tree-node concept, reuses a saved lesson or runs bounded source discovery, backend fetch/chunk, and validated generation. Returns a saved session or an honest pending/failure state, never keys or rubrics.
 - `GET /sessions/:id`: public lesson and saved activity; excludes keys and rubrics that reveal answers.
 - `PATCH /sessions/:id/position`: current lesson step or assessment question.
 - `POST /sessions/:id/rounds`: `{ kind, requestId }`; generates or selects and persists a three-question set, then returns only its public snapshot, available optional tasks, source labels, and assessment basis. Repeated requests reuse the saved round and never expose keys.
@@ -281,18 +281,9 @@ All routes are under `/api`. Use JSON request bodies, schema validation, ownersh
 - `POST /sessions/:id/tutor`: `{ message, stepId, requestId }`; returns validated text, citations, highlights, and assessment-assistance state.
 - `GET /sessions/:id/messages`: paginated saved clarification history.
 - `POST /sessions/:id/optional-tasks/:taskId/answer`: grades explanation/visual work; supports inconclusive state without affecting required completion.
-- `GET /map`: accessible nodes, edges, area counts, source labels, and statuses.
 - `GET /concepts/:id/evidence`: assessment and conversation history for the caller.
-- `POST /explore`: `{ topic, requestId }`; resolves an exact known alias or creates a private unsupported concept and generated session.
 
-### Administration
-
-- `GET /admin/sources`: sources, revisions, and import/review states.
-- `POST /admin/sources`: approved URL and concept mappings; creates a draft source.
-- `POST /admin/sources/:id/import`: fetches/extracts one page and returns a revision preview.
-- `POST /admin/sources/:id/approve`: approved revision ID; activates it atomically.
-
-Do not expose a generic SQL, arbitrary URL-fetch, or model-prompt endpoint. Generated answer keys are never included in lesson/map payloads or client state/cache. Existing source links are references; clicking a link does not imply permission to fetch unrelated pages.
+Do not expose a generic SQL, arbitrary URL-fetch, or model-prompt endpoint. Generated answer keys are never included in lesson/tree payloads or client state/cache. Existing source links are references; clicking a link does not imply permission to fetch unrelated pages.
 
 ## 7. Configuration, verification, and deployment preparation
 
@@ -300,7 +291,7 @@ Do not expose a generic SQL, arbitrary URL-fetch, or model-prompt endpoint. Gene
 
 Browser-safe: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`. The publishable key requires correct RLS; it is not a service secret.
 
-Server-only: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (or the project's legacy service-role key), `GEMINI_API_KEY`, `GEMINI_MODEL`, `SOURCE_ALLOWED_HOSTS`, `APP_ORIGIN`, and configurable AI limits. Local server defaults to port 3000; Vite defaults to 5173.
+Server-only: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (or the project's legacy service-role key), `GEMINI_API_KEY`, `GEMINI_MODEL`, `SOURCE_ALLOWED_HOSTS`, `APP_ORIGIN`, and configurable AI limits. Stage 13 adds `GEMINI_SEARCH_MODEL` with `gemini-2.5-flash` as the planned value; it normally uses the same server-only Gemini API key, subject to project access. No key rotation or second key is implied by the plan. Local server defaults to port 3000; Vite defaults to 5173.
 
 Root script contract: `npm run dev`, `npm run build`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`. Add `npm run content:check`, `npm run content:seed`, `npm run db:check`, and an explicitly opt-in `npm run ai:smoke` when those capabilities are implemented. External-service checks must report unavailable configuration rather than passing without running.
 
@@ -308,11 +299,11 @@ Use blank placeholders in `.env.example`. Do not reuse ThinkTwice credentials, c
 
 ### Essential verification
 
-- Unit tests: qualification and status projection, source-grounded versus unverified mode independently from reviewed versus AI-generated assessment basis, recommendation ordering, bounded schemas, question-family independence, and graph-update payloads.
-- Database/API integration: two-user isolation, answer-key secrecy, atomic assessment/map updates, duplicate submissions, stale lesson references, source activation, and guest merge replay/expiry.
-- AI adapter tests: prompt manipulation, unsupported citations, invalid graph IDs, missing objective coverage, malformed JSON, rate limit, refusal, timeout, and ambiguous/inconclusive grading.
-- Live provider smoke test: one bounded structured request using the configured model. Record actual model access and result; do not infer availability from mocked tests.
-- Browser journeys: guest onboarding -> Learn -> map; developing concept -> Review -> independent success -> map status change; unsupported topic -> AI-assessed demonstrated understanding with unverified badge; guest sign-in and existing-account merge; refresh/resume; mobile and reduced motion.
+- Unit tests: qualification and status projection independently from source provenance and assessment basis, recommendation ordering, exactly-three-child expansion, duplicate-title/idempotency rules, bounded schemas, question-family independence, and tree-update payloads.
+- Database/API integration: two-user tree/source isolation, answer-key secrecy, atomic assessment/tree updates, duplicate/concurrent submissions, stale lesson references, citation persistence, and guest merge replay/expiry.
+- AI adapter and importer tests: prompt manipulation from fetched pages, unsafe URLs/redirects, extraction and coverage failures, unsupported citations, invalid diagram IDs, malformed JSON, rate limit, refusal, timeout, and ambiguous/inconclusive grading.
+- Live provider smoke tests: bounded calls to both configured models, including Gemini 2.5 Flash with Search grounding and Gemini 3.5 Flash-Lite structured lesson generation. Record actual project access, result, quota and token use; do not infer availability from mocked tests.
+- Browser journeys: guest root -> three children -> cited lesson -> tree update; developing concept -> Review -> independent success -> same tree node changes; repeated expansion; unavailable source retry; guest sign-in and existing-account merge; refresh/resume; mobile and reduced motion.
 
 Logs contain operation IDs, model name, elapsed time, outcome, and usage counts. Exclude secrets, raw student answers, and full conversation text. Keep review fixtures and test outputs clearly separate from live user-facing results.
 

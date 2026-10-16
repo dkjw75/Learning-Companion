@@ -71,15 +71,17 @@ export function createProfileService(
       const ready = new Set((availability.data ?? []) as string[]);
       const generationReady = Boolean(process.env.GEMINI_API_KEY?.trim() && process.env.GEMINI_MODEL?.trim() && process.env.DATABASE_URL?.trim());
       const statuses = new Map((progress.data ?? []).map(row => [row.concept_id as string, row.learning_status as string]));
-      const latestByConcept = new Map<string, string>();
+      const latestByConcept = new Map<string, { id: string; completed: boolean }>();
       for (const row of sessions.data ?? []) {
-        if (!latestByConcept.has(row.concept_id as string)) latestByConcept.set(row.concept_id as string, row.id as string);
+        if (!latestByConcept.has(row.concept_id as string)) latestByConcept.set(row.concept_id as string,
+          { id: row.id as string, completed: Boolean(row.completed_at) });
       }
       const concepts = (catalogue.data ?? []).map(row => ({
         id: row.id as string, slug: row.slug as string, title: row.title as string,
         area: row.area as string, order: row.catalogue_order as number,
         contentAvailable: generationReady && ready.has(row.id as string),
-        sessionId: latestByConcept.get(row.id as string) ?? null,
+        sessionId: latestByConcept.get(row.id as string)?.id ?? null,
+        sessionCompleted: latestByConcept.get(row.id as string)?.completed ?? false,
         status: statuses.get(row.id as string) ?? 'not_assessed',
       }));
       const preferred = concepts.filter(concept => profile.interests.includes(concept.area as Profile['interests'][number]));

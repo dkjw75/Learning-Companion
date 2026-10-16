@@ -1,6 +1,6 @@
 # Proposed Build Plan
 
-Version 1.3 | 16 October 2026 | Staged implementation | Source-backed catalogue can expand beyond 12 concepts
+Version 1.4 | 16 October 2026 | Staged implementation | On-demand topic tree and source discovery
 
 Read [PRD.md](../PRD.md) and [technical-design.md](technical-design.md) before starting. Build a new application in LearningCompanion; do not modify the existing ThinkTwice application or reuse its secrets.
 
@@ -12,7 +12,7 @@ If instructed to execute a single stage, stop after that stage and report its re
 
 When a stage is too large for one turn, finish one coherent subtask, record remaining work, and resume that same stage before advancing. Do not replace failed live features with unlabeled fixtures.
 
-This revision changes the earlier Stage 4-10 sequence: Stage 4 loads reference material; Stage 5 connects Gemini; Stage 6 generates lessons and questions; Stage 7 renders lessons; Stage 8 grades MCQs; Stage 9 displays the map; Stage 10 implements Review. Stages 1-3 and 11 onward retain their feature scope with updated dependencies.
+Stages 1-8 remain the existing foundation, including the four working source-backed lessons. Stage 9 replaces the separate knowledge map with the topic tree. Stage 13 adds on-demand expansion, source discovery, safe import, and lesson generation. Stages 16, 17A-C, and 19 are removed as separate implementation stages; their necessary validation is folded into Stages 13 and 18A. Do not implement a removed stage. Existing routes or labels from earlier stages can be redirected or renamed in Stage 9 without rewriting earlier stage history.
 
 Suggested prompt for a single stage:
 
@@ -138,36 +138,36 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 - Serve the saved three-question assessment with private server-side keys.
 - Implement required-MCQ completion, feedback, hints, retries, and idempotent answer recording.
 - Grade deterministically against the frozen key; compute status and finalize round/progress in one transaction.
-- Show results and the committed before/after status update after Learn, with a full-map link enabled in Stage 9.
+- Show results and the committed before/after status update after Learn, with a link to the topic tree enabled in Stage 9.
 
 **Done when:** all-independent 3/3 results qualify, assisted retries do not qualify, duplicate submissions do not duplicate evidence, incomplete checks do not erase completed history, and final results contain a committed progress/map payload. A generated key is never silently regenerated while grading.
 
-## Stage 9 - Knowledge-map experience
+## Stage 9 - Topic-tree experience
 
 **Depends on:** Stage 8.
 
 **Work:**
 
-- Build area summaries and an interactive SVG concept graph with source/status badges.
-- Add a node-details panel with objectives, sources, assessment basis, evidence, history, and Learn/Review actions.
-- Follow the approved Knowledge Map design and reuse selected cards/badges around the application's SVG graph.
-- Display catalogue concepts as not assessed and explored/assessed concepts with their actual state.
-- Support keyboard selection and a list alternative for accessibility.
+- Build one accessible topic-tree screen; it is both the place to choose lessons and the place to see learning history. There is no second knowledge-map or Explore screen.
+- Prepare four fixed broad roots: Software Development, AI Engineering, Cybersecurity, and Cloud Computing. During Stage 9, show only roots/branches with currently usable lessons; hide empty roots and expansion actions until Stage 13 makes them usable. Keep the existing four working lessons reachable without fabricating three generated children for them.
+- Add node details with objectives, citations, assessment basis, evidence, history, and Learn/Review actions. Show actual Not assessed, Explored, Developing, or Demonstrated understanding states.
+- Adapt the approved Knowledge Map visual theme to a parent-child tree. Preserve keyboard selection and a readable list alternative; do not add a force-graph dependency or unsupported prerequisite links.
+- Rename navigation to Topics when this screen is ready, and redirect any existing `/map` links to the one tree screen.
 
-**Done when:** map states match stored evidence, another user's private nodes never appear, completing Learn refreshes relevant counts/nodes, and source status remains independent from AI assessment outcomes.
+**Done when:** the tree shows real available lessons and evidence, another user's private nodes never appear, Learn results update the selected node without refresh, and no nonfunctional expansion controls or duplicate map screens are shown.
 
-## Stage 10 - Review journey and visible map changes
+## Stage 10 - Review journey and visible tree changes
 
 **Depends on:** Stages 6 and 9.
 
 **Work:**
 
-- Generate, validate, and save a distinct three-question recall set using the same approved references and the assessment history; use stored reviewed questions if independently reviewed sets are available.
+- Generate, validate, and save a distinct three-question recall set using the selected lesson's saved references and assessment history; use stored reviewed questions if independently reviewed sets are available.
 - Show targeted diagrams/explanations for mistakes and optional follow-up practice.
 - Offer a separately generated and saved independent confirmation set when the student wants to demonstrate understanding after assistance. Compare question families and normalized question content to earlier sets; reject near-duplicate retries rather than treating new IDs as new evidence.
-- Show results followed by the committed map update and evidence link, including unchanged results.
+- Show results followed by the committed tree-node update and evidence link, including unchanged results. Use each lesson's saved reference snapshot, whether it came from the four existing lessons or Stage 13 discovery.
 
-**Done when:** a developing concept can become demonstrated understanding after a qualifying review/confirmation; assisted practice or duplicate questions alone do not cause that transition; results retain the assessment basis and graph updates appear without a manual refresh.
+**Done when:** a developing concept can become demonstrated understanding after a qualifying review/confirmation; assisted practice or duplicate questions alone do not cause that transition; results retain the assessment basis and tree updates appear without a manual refresh.
 
 ## Stage 11 - Lesson tutor and animated mascot
 
@@ -176,7 +176,7 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 **Work:**
 
 - Add the original SVG mascot and four animation states.
-- Implement typed clarification using current step, bounded conversation context, and reference passages.
+- Implement typed clarification using current step, bounded conversation context, and the selected lesson's saved reference passages, including Stage 13 lessons.
 - Validate returned highlights/citations, save conversations, and mark assessment assistance when applicable.
 - Add reduced-motion behaviour and tutor loading/error states.
 - Adapt any approved 21st.dev chat/input/loading components to the saved tutor-message API and shared design theme.
@@ -189,25 +189,27 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 
 **Work:**
 
-- Replace the initial catalogue-order-only recommendation with the specified interests/prerequisites/evidence rules.
+- Replace the initial catalogue-order-only recommendation with interests, available tree nodes, reviewed prerequisites where present, and learning evidence. A generated parent-child link is not a prerequisite claim.
 - Confirm tentative misconceptions using further assessment evidence.
 - Add due-review scheduling with 1/3/7-day defaults and clear recommendation reasons.
 - Keep overrides available and preserve reviewed relationships.
 
-**Done when:** developing and demonstrated profiles yield appropriate different suggestions, unsupported evidence does not overwrite reviewed prerequisites, and students can choose a different topic.
+**Done when:** developing and demonstrated profiles yield appropriate different suggestions, generated branches do not overwrite reviewed prerequisites, and students can choose a different tree node.
 
-## Stage 13 - Unsupported exploration
+## Stage 13 - On-demand tree expansion and sourced lessons
 
-**Depends on:** Stages 5, 9, and 11.
+**Depends on:** Stages 5, 6, 9, and 11.
 
 **Work:**
 
-- Resolve exact catalogue aliases or create private unsupported concepts from bounded topic input.
-- Generate validated guided lessons and optional three-MCQ assessments with stored private keys.
-- Add private AI-suggested graph connections with unverified labels.
-- Apply the same learning statuses while retaining source/assessment labels.
+- On request, ask Gemini for exactly three focused child topics under the selected node. Validate titles/objectives, compare with saved siblings and accessible concepts/aliases, and save stable child IDs and parent links atomically. Repair an invalid or duplicate proposal once; otherwise fail without saving a partial branch. A repeated or concurrent expansion returns the same saved children; no lesson snapshot is needed to deduplicate tree nodes.
+- Use Gemini 2.5 Flash with Google Search grounding only for candidate source discovery. Extract URLs from grounding metadata; do not treat model-written URL text as a fetched source. Bound search attempts and candidate pages.
+- Move the necessary Stage 16 importer work here: review and configure suitable official-documentation hosts for all four roots, check allowed HTTPS hosts, DNS and redirects, page size/time, reuse permissions, and non-executing extraction; chunk and save usable passages with URL/version snapshots. Check objective coverage before lesson generation. No general crawl or admin approval gate is required for automatically discovered pages.
+- Reuse the Stage 6 Gemini 3.5 Flash-Lite generator, lesson/diagram schema, private-key storage, citation validation, and saved-session behavior for a selected child. A child can be expanded again only on request. A failed fetch or insufficient coverage leaves the lesson unavailable with a plain-language retry or another-topic action; never fall back to an unlabeled model-only lesson.
+- Add forward migrations and access rules for private saved tree nodes, parent links, expansion idempotency, private lesson concepts, and automatically retrieved source snapshots; reconcile the existing private-concept constraints and approved-only passage retrieval without rewriting old migrations. Preserve existing four lessons, reviewed prerequisite edges, historical citations, and the independence of source provenance from assessment outcomes. Show source links and AI-assessed basis without an extra badge merely for Gemini discovery.
+- Account for the new discovery/expansion calls under the existing operation-request and usage system. For this personal/tester deployment, replace the restrictive 20/60/300 app-call defaults with configurable pilot limits or provider free-tier limits; bound each action, cache successes, and do not enable paid billing automatically.
 
-**Done when:** an unsupported topic can progress from explored to developing to demonstrated understanding, its unverified tag never disappears because of a pass, private topics remain private, and failed generation is not replaced by a fake successful lesson.
+**Done when:** a successful requested expansion yields exactly three stable, distinct private children and a failed expansion saves none; repeated and concurrent clicks do not add nodes or duplicate provider calls; a selected child yields a cited, validated saved lesson only from fetched suitable passages; another student cannot read its tree or source snapshots; an unavailable or unsuitable source fails honestly; the two configured models are proven with live calls within the project's free-tier access.
 
 ## Stage 14 - Optional explanation and visual tasks
 
@@ -218,7 +220,7 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 - Generate and persist the optional explanation question/rubric, then provide rubric-based feedback with an inconclusive grading state.
 - Generate and validate step-ordering and label-matching tasks with saved private keys and deterministic server grading.
 - Add explicit Skip controls and retain optional-task evidence separately.
-- Support these tasks for both supported and unsupported sessions.
+- Support these tasks for both existing catalogue sessions and generated tree lessons.
 
 **Done when:** skipping has no penalty, alternate valid explanations can be accepted, malformed grading does not fabricate evidence, and optional tasks do not change required completion/status rules.
 
@@ -231,102 +233,41 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 - Configure Google identity linking and the auth callback flow.
 - Add the non-blocking sign-in offer after the first lesson.
 - Implement single-use merge tickets and transactional transfer to an existing account.
-- Recompute progress from combined evidence without losing histories or exposing private data.
+- Recompute progress from combined evidence and move private tree nodes, parent links, source snapshots, and sessions without losing histories or exposing private data.
 - Implement settings, sign-out, and deletion of personal learning data.
 
-**Done when:** new-account linking keeps the guest UUID/history; existing-account sign-in retains both histories; expired/replayed tickets fail; another user's records cannot be merged without proof; and deletion retains the shared catalogue.
+**Done when:** new-account linking keeps the guest UUID/history and tree; existing-account sign-in retains both histories and resolves duplicate tree nodes without losing their lessons; expired/replayed tickets fail; another user's records cannot be merged without proof; and deletion retains the shared roots and catalogue material.
 
-## Stage 16 - Admin source management and single-page importer
 
-**Depends on:** Stage 6.
+## Stage 16A - Integration and failure verification
 
-**Work:**
-
-- Build source list, URL/concept entry, import preview, and revision-approval controls.
-- Implement host/DNS/redirect restrictions, bounded fetch/extraction, and non-executing HTML parsing.
-- Preserve headings/examples, chunk passages, and retain historical revisions.
-- Activate approved revisions transactionally; keep failed imports and pending revisions out of retrieval.
-
-**Done when:** a permitted page can be previewed and approved; unapproved/private/redirected targets are rejected; oversized and failed extraction is visible; and earlier lesson citations remain resolvable after source updates.
-
-## Stage 17A - Add remaining web and API references
-
-**Depends on:** Stages 14 and 16.
-
-**Work:** add approved references and objective mappings for HTTP methods, status codes, REST basics, and JSON, following Stage 4's source contract. Use the Stage 16 admin importer for permitted pages; the existing catalogue definitions do not require a new concept editor. Replace the four-starter-concept generation restriction with approved objective coverage and supported-concept status before enabling these concepts. Generate lessons, assessments, and optional tasks through the Stage 6/14 services.
-
-**Done when:** all four concepts have adequate approved coverage, validated generated diagrams/questions/tasks, retained AI-assessed provenance where applicable, and a passing sample learning/review journey.
-
-## Stage 17B - Add remaining database and access-control references
-
-**Depends on:** Stage 17A.
-
-**Work:** approve references and objective mappings for keys/relationships, selecting/filtering, joins, and authentication versus authorization using the same importer/generation flow. Review cross-area connections and evaluate sample generated examples.
-
-**Done when:** all 12 concepts have approved reference coverage and working generated lesson/assessment flows; reviewed relationships remain consistent; and representative source-backed outputs across all three areas have recorded evaluations.
-
-## Stage 17C - Create new source-backed catalogue concepts
-
-**Depends on:** Stages 16 and 17B.
+**Depends on:** Stages 12-15.
 
 **Work:**
 
-- Add an admin workflow to draft a new shared computing concept with its area, title, aliases, learning objectives, and proposed prerequisite/related links. Extend the area taxonomy and student catalogue/map filters without hard-coded 12-concept or three-area lists.
-- Let an admin add permitted web pages or upload PDF, Markdown, and plain-text documents. Preview bounded, non-executing extraction with title, origin/author, version, and permission metadata; retain the original file or stable source reference and historical revisions so citations remain resolvable. Review revisions and map approved passages to each objective. Show missing coverage before activation. New concepts stay unavailable to students until their objectives and source mappings are approved; uploaded material or a Gemini suggestion alone never approves a concept or its claims.
-- Reuse the Stage 6 lesson generator and Stage 7-14 learning flow for activated concepts. Keep private unverified explorations from Stage 13 separate from shared supported concepts. Preserve old lesson/source snapshots when a concept or source is revised.
-- Prove the workflow with at least one new concept in programming, computer systems, and security, with reviewed relationships to existing concepts. Record the approved source, objective mapping, sample lesson/assessment evaluation, and any coverage gaps for each.
-
-**Done when:** an admin can add and activate a source-backed concept in a previously absent area without a code or seed-data change; each pilot concept appears in Learn and the map, generates a cited interactive lesson and assessment, and remains unavailable when coverage or approval is incomplete. Existing 12 concepts and historical sessions still work; another user cannot publish or edit the shared catalogue.
-
-## Stage 18A - Integration and failure verification
-
-**Depends on:** Stages 12-17C.
-
-**Work:**
-
-- Run the guest Learn/map, developing-to-demonstrated Review/map, unsupported exploration, and account-conversion browser journeys.
-- Verify RLS, answer-key secrecy, transactional map updates, duplicate-request handling, and source-provenance persistence.
-- Exercise prompt manipulation, invalid citations/diagrams, alternate valid answers, inconclusive grading, provider failures, and interrupted sessions.
+- Run guest root expansion -> child lesson -> tree update, developing-to-demonstrated Review -> tree update, deeper expansion, and account-conversion browser journeys.
+- Verify RLS, answer-key secrecy, transactional tree updates, duplicate/concurrent expansion handling, saved source snapshots, and the four earlier lessons.
+- Pilot varied nodes under all four roots; record valid source/lesson rate, page access and suitability failures, factual/diagram/question defects, wait time, Gemini calls, token use, and free-tier quota outcomes. Do not claim an arbitrary-topic success rate from the four hand-selected lessons.
+- Exercise prompt manipulation through fetched pages, unsafe URLs and redirects, invalid citations/diagrams, alternate valid answers, inconclusive grading, provider failures, and interrupted sessions.
 - Verify mobile, keyboard, reduced motion, and text alternatives; fix failures within existing scope.
-- Compare Home, Lesson, and Knowledge Map with approved Stitch references and verify imported component interactions, theme consistency, and absence of sample-data placeholders.
+- Compare Home, Lesson, and the topic tree with approved Stitch references while adapting the old graph image to the new product flow. Verify interactions, theme consistency, and absence of sample-data placeholders.
 
-**Done when:** required journeys and failure cases pass with clearly recorded evidence. Live provider/auth/database checks are identified separately from mocks.
+**Done when:** required journeys and failure cases pass with clearly recorded evidence; automatic sourcing has a measured success rate and usage profile across varied topics. Live provider/auth/database checks are identified separately from mocks.
 
-## Stage 18B - Deployment preparation and validation
+## Stage 16B - Deployment preparation and validation
 
-**Depends on:** Stage 18A.
+**Depends on:** Stage 16A.
 
 **Work:**
 
 - Prepare Vercel frontend/backend configuration, SPA/API routing, environment documentation, OAuth redirects, migration instructions, and production builds.
-- Write the README sections required by the hackathon, including AI integration, tools, safety, limitations, and tested behaviour.
-- Prepare a short demo showing visual teaching, clarification, adaptive recommendations, Review/map updates, and unverified-topic handling.
+- Write the README sections required by the hackathon, including the two Gemini models, automatic sourcing, tools, safety, free-tier limits, measured limitations, and tested behaviour.
+- Prepare a short demo showing tree expansion, cited visual teaching, clarification, adaptive recommendations, and Review/tree updates.
 - Deploy only when deployment is included in the user's authorized scope. Do not purchase services or publish artifacts merely because this stage exists.
 
 **Done when:** reproducible setup and builds pass; deployment configuration is ready. If deployment is authorized, verify the live URLs and real learning/auth/provider flows before marking deployment complete.
 
-## Stage 19 - Expand approved coverage across core computing
-
-**Depends on:** Stages 17C and 18B.
-
-**Work:** use the Stage 17C workflow in area-sized batches to extend the shared catalogue beyond the original 12. The proposed core curriculum below is a starting scope, not a claim to cover every computing specialty. Keep each concept small enough for a focused lesson; split broad entries during source review. For every concept, curate objectives and aliases, approve suitable references, map passages to objectives, review prerequisite links, and evaluate a generated diagram, application question, and full Learn journey before marking it available.
-
-**Proposed concepts** (in addition to the original 12):
-
-- **Programming foundations:** values and types; control flow; functions and scope; collections; objects and classes; errors and exceptions.
-- **Data structures and algorithms:** arrays and linked lists; stacks and queues; hash tables; trees and graphs; searching and sorting; time and space complexity.
-- **Computer systems:** binary and text encoding; CPU and memory; processes and threads; concurrency; filesystems; virtualization.
-- **Networking:** IP addresses and routing; DNS; TCP and UDP; TLS; latency and bandwidth; caching and CDNs.
-- **Browser and frontend:** semantic HTML; CSS layout; DOM and events; forms and validation; browser storage; accessibility.
-- **Backend and distributed systems:** routing and middleware; server-side validation; sessions and tokens; caches; message queues; retries and consistency.
-- **Database design:** schema design and normalization; indexes; transactions; query plans; replication and backups; document databases.
-- **Security:** password hashing; encryption; OAuth and OpenID Connect; injection attacks; XSS and CSRF; threat modeling and least privilege.
-- **Cloud and operations:** cloud compute and storage; containers; CI/CD; load balancing; monitoring and logs; infrastructure as code.
-- **Software engineering:** Git and version control; debugging; automated testing; API contracts and versioning; design patterns; system design.
-- **Data and AI:** data cleaning; probability and statistics; machine-learning training; model evaluation and overfitting; embeddings and vector search; LLM grounding and retrieval.
-
-**Done when:** the proposed core concepts have approved objective-level source coverage and working cited lessons/assessments, or any deliberately deferred concept is explicitly removed from the approved scope with its reason recorded. Verify each area in a separate batch (`Stage19.X`) and keep unsupported or weakly sourced topics visibly unverified rather than presenting broad coverage as complete. Re-run cross-area map, search/filter, mobile, and accessibility checks after the final batch.
 
 ## Completion boundary
 
-The build delivers the agreed product, not additional gamification or new providers. User-facing claims must match observed behaviour. A polished graph is not proof of learning; any student pilot should measure application and later independent recall, with its sample and limitations recorded.
+The build delivers the agreed product, not additional gamification or new providers. User-facing claims must match observed behaviour. A polished tree is not proof of learning; any student pilot should measure application and later independent recall, with its sample and limitations recorded.

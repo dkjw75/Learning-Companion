@@ -48,6 +48,7 @@ export const assessmentRoundSchema = z.strictObject({
 export const startRoundRequestSchema = z.strictObject({ kind: roundKindSchema, requestId: entityIdSchema });
 export const submitAnswerRequestSchema = z.strictObject({ questionId: contentIdSchema, answer: contentIdSchema, requestId: entityIdSchema });
 export const hintRequestSchema = z.strictObject({ questionId: contentIdSchema, requestId: entityIdSchema });
+export const hintResponseSchema = z.strictObject({ hint: proseSchema, assisted: z.literal(true) });
 export const answerEvidenceSchema = z.strictObject({
   id: entityIdSchema, roundId: entityIdSchema, questionId: contentIdSchema, requestId: entityIdSchema,
   attemptIndex: z.number().int().min(1), answer: contentIdSchema,

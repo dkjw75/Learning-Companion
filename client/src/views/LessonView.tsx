@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
-import { ButtonUi } from '@/components/ui/button-ui';
+import { ButtonUi, ButtonUiLink } from '@/components/ui/button-ui';
 import { LessonDiagram } from '@/components/LessonDiagram';
 import { fetchLesson, saveLessonStep } from '@/lib/sessions';
 
@@ -44,7 +44,8 @@ export function LessonView() {
         </li>)}</ul></div>}
         <div className="lesson-actions"><ButtonUi variant="quiet" disabled={saving || index === 0} onClick={() => { void move(index - 1); }}>Previous</ButtonUi>
           {index < data.lesson.steps.length - 1 && <ButtonUi disabled={saving} onClick={() => { void move(index + 1); }}>Next step</ButtonUi>}</div>
-        {index === data.lesson.steps.length - 1 && <p className="lesson-finished">You have reached the end of this lesson.</p>}
+        {index === data.lesson.steps.length - 1 && <div className="lesson-quiz-entry"><p>You have reached the end of this lesson.</p>
+          <ButtonUiLink to={`/learn/${data.id}/quiz`}>Go to quiz</ButtonUiLink></div>}
         {saveError && <p role="alert" className="form-error">Could not save your place. Please try again.</p>}
       </section></div></div>
   </article>;
