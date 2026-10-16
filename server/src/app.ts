@@ -80,6 +80,18 @@ export function createApp(profileService: ProfileService = createProfileService(
       if (!session) throw new ApiError(404, 'NOT_FOUND', 'Lesson not found.');
       res.json({ data: session });
   });
+  app.patch('/api/sessions/:id/position', async (req, res) => {
+      res.setHeader('Cache-Control', 'no-store');
+      const token = tokenFrom(req.get('Authorization'));
+      if (!z.uuid().safeParse(req.params.id).success) throw new ApiError(404, 'NOT_FOUND', 'Lesson not found.');
+      const parsed = z.strictObject({ step: z.number().int().nonnegative() }).safeParse(req.body);
+      if (!parsed.success) throw new ApiError(400, 'INVALID_INPUT', 'Choose a lesson step.');
+      if (!generationService) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Lessons are temporarily unavailable.');
+      const profile = await profileService.getProfile(token);
+      const currentStep = await generationService.setPosition(profile.userId, req.params.id, parsed.data.step);
+      if (currentStep === null) throw new ApiError(404, 'NOT_FOUND', 'Lesson step not found.');
+      res.json({ data: { currentStep } });
+  });
   app.use((_req, _res, next) => next(new ApiError(404, 'NOT_FOUND', 'Resource not found.')));
   const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _next) => {
     let status = 500;

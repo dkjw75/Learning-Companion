@@ -19,6 +19,7 @@ try {
     console.log(JSON.stringify({ concept: row.slug, sessionId: row.id,
       lesson: { title: row.lesson.title, diagrams: row.lesson.diagrams,
         steps: row.lesson.steps.map(step => ({ heading: step.heading, caption: step.caption,
+          explanation: step.explanation, workedExample: step.workedExample, commonMistake: step.commonMistake,
           citationChunkIds: step.citationChunkIds })) },
       questions: row.questions.map(question => ({ prompt: question.prompt, kind: question.kind,
         options: question.options, citationChunkIds: question.citationChunkIds })),

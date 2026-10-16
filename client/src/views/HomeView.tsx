@@ -1,11 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { ArrowRight, BookOpen, BrainCircuit, CalendarDays, CircleHelp, Network, Sparkles } from 'lucide-react';
 import { learningStatusLabels } from '@learning-companion/shared';
 import { useSession } from '@/auth/session-context';
 import { fetchHome, type ConceptChoice, type HomeData } from '@/lib/learning';
 import ContributionSkyline from '@/components/ui/contribution-skyline';
 import { ButtonUi, ButtonUiLink } from '@/components/ui/button-ui';
+import { startLesson } from '@/lib/sessions';
 
 const areaNames: Record<string, string> = { web_communication: 'WEB COMMUNICATION', apis: 'APIs', databases: 'DATABASES' };
 function useHomeData() {
@@ -20,6 +22,29 @@ function ActivityPanel({ data }: { data: HomeData }) {
 }
 function ConceptCard({ concept, compact = false }: { concept: ConceptChoice; compact?: boolean }) {
   return <div className={`concept-row ${compact ? 'compact' : ''}`}><div className="concept-icon"><Network size={20} /></div><div><span className="concept-area">{areaNames[concept.area]}</span><h3>{concept.title}</h3><span className="status-text">{learningStatusLabels[concept.status as keyof typeof learningStatusLabels] ?? 'Not assessed'}</span></div></div>;
+}
+function StartLesson({ concept }: { concept: ConceptChoice }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (concept.sessionId) return <div className="lesson-start"><ButtonUiLink size="small" to={`/learn/${concept.sessionId}`}>Resume lesson</ButtonUiLink></div>;
+  if (!concept.contentAvailable) return <p>Lesson unavailable right now</p>;
+  async function start() {
+    setStarting(true); setError(null);
+    try {
+      const saved = await startLesson(concept.id, crypto.randomUUID());
+      void queryClient.invalidateQueries({ queryKey: ['home'] });
+      navigate(`/learn/${saved.id}`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not prepare your lesson. Please try again.');
+    } finally { setStarting(false); }
+  }
+  return <div className="lesson-start"><ButtonUi size="small" disabled={starting} onClick={() => { void start(); }}>
+    {starting ? 'Preparing your lesson…' : 'Start lesson'}</ButtonUi>
+    {starting && <span role="status">This may take a moment.</span>}
+    {error && <p role="alert">{error} <ButtonUi variant="quiet" size="small" onClick={() => { void start(); }}>Try again</ButtonUi></p>}
+  </div>;
 }
 export function HomeView() {
   const { profile } = useSession();
@@ -50,6 +75,6 @@ export function CatalogueView({ map = false }: { map?: boolean }) {
   if (isLoading) return <p className="load-state" role="status">Loading topics…</p>;
   if (isError || !data) return <div className="load-state" role="alert">Could not load topics. <ButtonUi variant="quiet" size="small" onClick={() => { void refetch(); }}>Try again</ButtonUi></div>;
   return <div className="catalogue-view"><div className="page-intro"><span className="eyebrow">{map ? 'YOUR LEARNING PATH' : 'EXPLORE THE CATALOGUE'}</span><h1>{map ? 'Knowledge Map' : 'Choose what to learn'}</h1><p>{map ? 'See how the foundation topics connect and which ones you have explored.' : 'Start with a recommendation or follow your curiosity.'}</p></div>
-    {['web_communication', 'apis', 'databases'].map(area => <section className="catalogue-area" key={area}><div className="catalogue-area-heading"><h2>{areaNames[area]}</h2><span>{data.concepts.filter(item => item.area === area).length} concepts</span></div><div className="catalogue-grid">{data.concepts.filter(item => item.area === area).map(item => <div className="catalogue-card" key={item.id}><ConceptCard concept={item} /><p>{item.contentAvailable ? 'Ready to learn' : 'Lesson unavailable right now'}</p></div>)}</div></section>)}
+    {['web_communication', 'apis', 'databases'].map(area => <section className="catalogue-area" key={area}><div className="catalogue-area-heading"><h2>{areaNames[area]}</h2><span>{data.concepts.filter(item => item.area === area).length} concepts</span></div><div className="catalogue-grid">{data.concepts.filter(item => item.area === area).map(item => <div className="catalogue-card" key={item.id}><ConceptCard concept={item} /><StartLesson concept={item} /></div>)}</div></section>)}
   </div>;
 }

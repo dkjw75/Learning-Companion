@@ -1,6 +1,6 @@
 # Proposed Build Plan
 
-Version 1.2 | 8 October 2026 | Staged implementation | Gemini after source loading
+Version 1.3 | 16 October 2026 | Staged implementation | Source-backed catalogue can expand beyond 12 concepts
 
 Read [PRD.md](../PRD.md) and [technical-design.md](technical-design.md) before starting. Build a new application in LearningCompanion; do not modify the existing ThinkTwice application or reuse its secrets.
 
@@ -253,7 +253,7 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 
 **Depends on:** Stages 14 and 16.
 
-**Work:** add approved references and objective mappings for HTTP methods, status codes, REST basics, and JSON, following Stage 4's source contract. Use the Stage 16 admin importer for permitted pages; the existing catalogue definitions do not require a new concept editor. Generate lessons, assessments, and optional tasks through the Stage 6/14 services.
+**Work:** add approved references and objective mappings for HTTP methods, status codes, REST basics, and JSON, following Stage 4's source contract. Use the Stage 16 admin importer for permitted pages; the existing catalogue definitions do not require a new concept editor. Replace the four-starter-concept generation restriction with approved objective coverage and supported-concept status before enabling these concepts. Generate lessons, assessments, and optional tasks through the Stage 6/14 services.
 
 **Done when:** all four concepts have adequate approved coverage, validated generated diagrams/questions/tasks, retained AI-assessed provenance where applicable, and a passing sample learning/review journey.
 
@@ -265,9 +265,22 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 
 **Done when:** all 12 concepts have approved reference coverage and working generated lesson/assessment flows; reviewed relationships remain consistent; and representative source-backed outputs across all three areas have recorded evaluations.
 
+## Stage 17C - Create new source-backed catalogue concepts
+
+**Depends on:** Stages 16 and 17B.
+
+**Work:**
+
+- Add an admin workflow to draft a new shared computing concept with its area, title, aliases, learning objectives, and proposed prerequisite/related links. Extend the area taxonomy and student catalogue/map filters without hard-coded 12-concept or three-area lists.
+- Let an admin add permitted web pages or upload PDF, Markdown, and plain-text documents. Preview bounded, non-executing extraction with title, origin/author, version, and permission metadata; retain the original file or stable source reference and historical revisions so citations remain resolvable. Review revisions and map approved passages to each objective. Show missing coverage before activation. New concepts stay unavailable to students until their objectives and source mappings are approved; uploaded material or a Gemini suggestion alone never approves a concept or its claims.
+- Reuse the Stage 6 lesson generator and Stage 7-14 learning flow for activated concepts. Keep private unverified explorations from Stage 13 separate from shared supported concepts. Preserve old lesson/source snapshots when a concept or source is revised.
+- Prove the workflow with at least one new concept in programming, computer systems, and security, with reviewed relationships to existing concepts. Record the approved source, objective mapping, sample lesson/assessment evaluation, and any coverage gaps for each.
+
+**Done when:** an admin can add and activate a source-backed concept in a previously absent area without a code or seed-data change; each pilot concept appears in Learn and the map, generates a cited interactive lesson and assessment, and remains unavailable when coverage or approval is incomplete. Existing 12 concepts and historical sessions still work; another user cannot publish or edit the shared catalogue.
+
 ## Stage 18A - Integration and failure verification
 
-**Depends on:** Stages 12-17B.
+**Depends on:** Stages 12-17C.
 
 **Work:**
 
@@ -291,6 +304,28 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 - Deploy only when deployment is included in the user's authorized scope. Do not purchase services or publish artifacts merely because this stage exists.
 
 **Done when:** reproducible setup and builds pass; deployment configuration is ready. If deployment is authorized, verify the live URLs and real learning/auth/provider flows before marking deployment complete.
+
+## Stage 19 - Expand approved coverage across core computing
+
+**Depends on:** Stages 17C and 18B.
+
+**Work:** use the Stage 17C workflow in area-sized batches to extend the shared catalogue beyond the original 12. The proposed core curriculum below is a starting scope, not a claim to cover every computing specialty. Keep each concept small enough for a focused lesson; split broad entries during source review. For every concept, curate objectives and aliases, approve suitable references, map passages to objectives, review prerequisite links, and evaluate a generated diagram, application question, and full Learn journey before marking it available.
+
+**Proposed concepts** (in addition to the original 12):
+
+- **Programming foundations:** values and types; control flow; functions and scope; collections; objects and classes; errors and exceptions.
+- **Data structures and algorithms:** arrays and linked lists; stacks and queues; hash tables; trees and graphs; searching and sorting; time and space complexity.
+- **Computer systems:** binary and text encoding; CPU and memory; processes and threads; concurrency; filesystems; virtualization.
+- **Networking:** IP addresses and routing; DNS; TCP and UDP; TLS; latency and bandwidth; caching and CDNs.
+- **Browser and frontend:** semantic HTML; CSS layout; DOM and events; forms and validation; browser storage; accessibility.
+- **Backend and distributed systems:** routing and middleware; server-side validation; sessions and tokens; caches; message queues; retries and consistency.
+- **Database design:** schema design and normalization; indexes; transactions; query plans; replication and backups; document databases.
+- **Security:** password hashing; encryption; OAuth and OpenID Connect; injection attacks; XSS and CSRF; threat modeling and least privilege.
+- **Cloud and operations:** cloud compute and storage; containers; CI/CD; load balancing; monitoring and logs; infrastructure as code.
+- **Software engineering:** Git and version control; debugging; automated testing; API contracts and versioning; design patterns; system design.
+- **Data and AI:** data cleaning; probability and statistics; machine-learning training; model evaluation and overfitting; embeddings and vector search; LLM grounding and retrieval.
+
+**Done when:** the proposed core concepts have approved objective-level source coverage and working cited lessons/assessments, or any deliberately deferred concept is explicitly removed from the approved scope with its reason recorded. Verify each area in a separate batch (`Stage19.X`) and keep unsupported or weakly sourced topics visibly unverified rather than presenting broad coverage as complete. Re-run cross-area map, search/filter, mobile, and accessibility checks after the final batch.
 
 ## Completion boundary
 

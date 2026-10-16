@@ -6,6 +6,7 @@ import { CatalogueView, HomeView } from '@/views/HomeView';
 import { useSession } from '@/auth/session-context';
 import { BackgroundAsciiWake } from '@/components/ui/background-ascii-wake';
 import { ButtonUiLink } from '@/components/ui/button-ui';
+import { LessonView } from '@/views/LessonView';
 
 export function App() {
   const { session, profile, status } = useSession();
@@ -28,6 +29,7 @@ export function App() {
         <Route path="/onboarding" element={status === 'loading' ? <p role="status">Loading…</p> : session && profile ? <OnboardingView /> : <Navigate to="/" replace />} />
         <Route path="/home" element={gated(<HomeView />)} />
         <Route path="/learn" element={gated(<CatalogueView />)} />
+        <Route path="/learn/:sessionId" element={gated(<LessonView />)} />
         <Route path="/map" element={gated(<CatalogueView map />)} />
         <Route path="*" element={<>
           <h1 className="mb-3 text-3xl font-semibold">Page not found</h1>

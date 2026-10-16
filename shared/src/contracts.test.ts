@@ -17,7 +17,11 @@ function lesson() {
     id: uuid, conceptId: otherUuid, title: 'Contract fixture', sourceMode: 'source_grounded' as const, contentVersion: 'fixture-v1',
     objectives: [{ id: 'objective-1', description: 'Recognise a request.' }], citationChunkIds: [uuid], diagrams: [structuredClone(diagram)],
     steps: Array.from({ length: 4 }, (_, index) => ({
-      id: `step-${index}`, heading: 'Test step', caption: 'A client sends a request.', diagramId: 'flow',
+      id: `step-${index}`, heading: 'Test step', caption: 'A client sends a request.',
+      explanation: 'The client begins by sending a request to the server. This starts the exchange, and the server can then return a response for the client to use.',
+      workedExample: 'A browser asks a server for its home page. The server returns the page for display.',
+      commonMistake: 'Mistake: the server starts this exchange. Correction: the client sends the request first.',
+      diagramId: 'flow',
       highlightNodeIds: ['client'], highlightEdgeIds: ['request'], citationChunkIds: [uuid],
     })),
   };
@@ -42,6 +46,8 @@ describe('bounded lesson contracts', () => {
   it('accepts structurally valid flow, relationship, and table diagrams', () => {
     expect(lessonSchema.safeParse(lesson()).success).toBe(true);
     expect(diagramSchema.safeParse({ ...diagram, type: 'relationship' }).success).toBe(true);
+    expect(diagramSchema.safeParse({ ...diagram, nodes: [{ ...diagram.nodes[0], icon: 'api' }, diagram.nodes[1]] }).success).toBe(true);
+    expect(diagramSchema.safeParse({ ...diagram, nodes: [{ ...diagram.nodes[0], icon: '<svg>' }, diagram.nodes[1]] }).success).toBe(false);
     expect(diagramSchema.safeParse({ id: 'table', title: 'Table', type: 'table', nodes: [], edges: [], table: { columns: ['ID', 'Name'], rows: [['1', 'Ada']] } }).success).toBe(true);
   });
   it.each([
@@ -56,6 +62,7 @@ describe('bounded lesson contracts', () => {
     ['too many diagrams', (value: ReturnType<typeof lesson>) => { value.diagrams.push({ ...diagram, id: 'second' }, { ...diagram, id: 'third' }); }],
     ['too many nodes', (value: ReturnType<typeof lesson>) => { value.diagrams[0]!.nodes = Array.from({ length: 9 }, (_, i) => ({ id: `n-${i}`, label: 'N', description: 'Node' })); }],
     ['long caption', (value: ReturnType<typeof lesson>) => { value.steps[0]!.caption = Array.from({ length: 101 }, () => 'word').join(' '); }],
+    ['missing worked example', (value: ReturnType<typeof lesson>) => { delete (value.steps[0] as Partial<typeof value.steps[number]>).workedExample; }],
   ])('rejects %s', (_name, mutate) => {
     const value = lesson(); mutate(value);
     expect(lessonSchema.safeParse(value).success).toBe(false);

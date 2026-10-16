@@ -25,7 +25,11 @@ const provider = async prompt => {
         { id: 'end', label: 'End', description: 'The ending item.' }],
       edges: [{ id: 'connection', from: 'start', to: 'end', label: 'Connects' }] }],
     steps: Array.from({ length: 4 }, (_, i) => ({ id: `step${i}`, heading: `Step ${i + 1}`,
-      caption: `Synthetic storage check for ${input.title}.`, diagramId: 'diagram',
+      caption: `Synthetic storage check for ${input.title}.`,
+      explanation: `This synthetic explanation checks that ${input.title} can be saved with additional text for every step.`,
+      workedExample: `This synthetic worked example checks that ${input.title} has a separate example stored with the lesson.`,
+      commonMistake: `Mistake: this text is a real lesson. Correction: it is only a synthetic storage check.`,
+      diagramId: 'diagram',
       highlightNodeIds: ['start'], highlightEdgeIds: ['connection'], citationChunkIds: [citation] })),
     questions: Array.from({ length: 3 }, (_, i) => ({ id: `q${i}`, familyId: `family${i}`,
       prompt: `Synthetic question ${i + 1}?`, kind: i === 2 ? 'application' : 'recall',
@@ -48,6 +52,11 @@ try {
     const repeat = await service.start(profile, conceptId, requestId);
     const fetched = await service.get(profile.userId, first.id);
     if (first.id !== repeat.id || first.id !== fetched?.id) throw new Error('Session was not reused.');
+    if (await service.setPosition(profile.userId, first.id, 2) !== 2 ||
+        (await service.get(profile.userId, first.id))?.currentStep !== 2 ||
+        await service.setPosition(profile.userId, first.id, 4) !== null ||
+        await service.setPosition(randomUUID(), first.id, 1) !== null)
+      throw new Error('Lesson position was not saved or owner-scoped.');
     if (JSON.stringify(first).includes('correctOptionId')) throw new Error('Private answer key leaked.');
     const secret = await database.query('select answer_keys,feedback_criteria from app_private.assessment_secrets where round_id=$1', [first.round.id]);
     if (secret.rows[0]?.answer_keys.q0 !== 'o0' || !secret.rows[0]?.feedback_criteria.q0)

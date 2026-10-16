@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "selectionReview": "Curated for Stage 4 under the user's 2026-10-09 instruction to implement it. This is source selection, not independent review of future AI lessons or answer keys.",
+  "selectionReview": "Original passages curated 2026-10-09; added passages checked against the linked publisher pages 2026-10-16. This approves source selection, not future AI lessons or answer keys.",
   "sources": [
     {
       "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works",
@@ -10,12 +10,14 @@
       "licenseUrl": "https://developer.mozilla.org/en-US/docs/MDN/Writing_guidelines/Attrib_copyright_license",
       "permissionReview": "allowed",
       "approvalBasis": "Public documentation, verified against the linked license; selected and fact-checked for the stated objective under the Stage 4 instruction.",
-      "sourceVersion": "accessed 2026-10-09",
+      "sourceVersion": "accessed 2026-10-16",
       "conceptSlug": "clients-and-servers",
       "objectiveId": "client-server-roles",
       "passages": [
         { "heading": "Clients and servers", "sectionAnchor": "clients_and_servers", "text": "Clients are the typical web user's internet-connected devices (for example, your computer connected to your Wi-Fi, or your phone connected to your mobile network) and web-accessing software available on those devices (usually a web browser like Firefox or Chrome)." },
-        { "heading": "Clients and servers", "sectionAnchor": "clients_and_servers", "text": "Servers are computers that store webpages, sites, or apps. When a client wants to access a webpage, a copy of the webpage code is downloaded from the server to the client machine, where it is rendered by the browser and displayed to the user." }
+        { "heading": "Clients and servers", "sectionAnchor": "clients_and_servers", "text": "Servers are computers that store webpages, sites, or apps. When a client wants to access a webpage, a copy of the webpage code is downloaded from the server to the client machine, where it is rendered by the browser and displayed to the user." },
+        { "heading": "So what happens, exactly?", "sectionAnchor": "so_what_happens_exactly", "text": "After someone enters a web address, the browser finds the server address through DNS and sends that server an HTTP request for the website. The server responds with the website files, and the browser assembles those files into the page shown to the person." },
+        { "heading": "The other parts of the toolbox", "sectionAnchor": "the_other_parts_of_the_toolbox", "text": "The browser uses HTTP to communicate with the server, while TCP/IP defines how data travels across the internet. A website can include code such as HTML, CSS, and JavaScript as well as assets such as images. These files come from the server and are assembled by the browser." }
       ]
     },
     {
@@ -26,13 +28,15 @@
       "licenseUrl": "https://developer.mozilla.org/en-US/docs/MDN/Writing_guidelines/Attrib_copyright_license",
       "permissionReview": "allowed",
       "approvalBasis": "Public documentation, verified against the linked license; selected and fact-checked for the stated objective under the Stage 4 instruction.",
-      "sourceVersion": "accessed 2026-10-09",
+      "sourceVersion": "accessed 2026-10-16",
       "conceptSlug": "http-requests-and-responses",
       "objectiveId": "http-exchange",
       "passages": [
         { "heading": "Components of HTTP-based systems", "sectionAnchor": "components_of_http-based_systems", "text": "HTTP is a client-server protocol: requests are sent by one entity, the user-agent (or a proxy on behalf of it). Most of the time the user-agent is a Web browser, but it can be anything, for example, a robot that crawls the Web to populate and maintain a search engine index. Each individual request is sent to a server, which handles it and provides an answer called the response." },
         { "heading": "HTTP Messages — Requests", "sectionAnchor": "requests", "text": "Requests consist of the following elements: An HTTP method, usually a verb like GET, POST, or a noun like OPTIONS or HEAD that defines the operation the client wants to perform. The path of the resource to fetch; the URL of the resource stripped from elements that are obvious from the context. The version of the HTTP protocol. Optional headers that convey additional information for the servers. A body, for some methods like POST." },
-        { "heading": "HTTP Messages — Responses", "sectionAnchor": "responses", "text": "Responses consist of the following elements: The version of the HTTP protocol they follow. A status code, indicating if the request was successful or not, and why. A status message, a non-authoritative short description of the status code. HTTP headers, like those for requests. Optionally, a body containing the fetched resource." }
+        { "heading": "HTTP Messages — Responses", "sectionAnchor": "responses", "text": "Responses consist of the following elements: The version of the HTTP protocol they follow. A status code, indicating if the request was successful or not, and why. A status message, a non-authoritative short description of the status code. HTTP headers, like those for requests. Optionally, a body containing the fetched resource." },
+        { "heading": "Client: the user-agent", "sectionAnchor": "client_the_user-agent", "text": "A browser begins an HTTP exchange by requesting an HTML document. After reading it, the browser may send further requests for scripts, stylesheets, images, and other resources. It combines the received resources to present the page, so loading one page can involve more than one request and response." },
+        { "heading": "HTTP flow", "sectionAnchor": "http_flow", "text": "An HTTP exchange follows a sequence: the client opens or reuses a connection, sends a request, reads the server response, and may reuse the connection later. An example request asks for a path with GET. A response begins with its HTTP version and a status such as 200 OK, followed by headers and possibly the requested HTML." }
       ]
     },
     {
@@ -43,12 +47,13 @@
       "licenseUrl": "https://developer.mozilla.org/en-US/docs/MDN/Writing_guidelines/Attrib_copyright_license",
       "permissionReview": "allowed",
       "approvalBasis": "Public documentation, verified against the linked license; selected and fact-checked for the stated objective under the Stage 4 instruction.",
-      "sourceVersion": "accessed 2026-10-09",
+      "sourceVersion": "accessed 2026-10-16",
       "conceptSlug": "what-an-api-does",
       "objectiveId": "api-contract",
       "passages": [
         { "heading": "API", "sectionAnchor": "api", "text": "An API (Application Programming Interface) is a set of features and rules that exist inside a software program (the application) enabling interaction with it through software - as opposed to a human user interface. The API can be seen as a simple contract (the interface) between the application offering it and other items, such as third-party software or hardware." },
-        { "heading": "API", "sectionAnchor": "api", "text": "In Web development, an API is generally a set of code features (e.g., methods, properties, events, and URLs) that a developer can use in their apps for interacting with components of a user's web browser, other software/hardware on the user's computer, or third-party websites and services." }
+        { "heading": "API", "sectionAnchor": "api", "text": "In Web development, an API is generally a set of code features (e.g., methods, properties, events, and URLs) that a developer can use in their apps for interacting with components of a user's web browser, other software/hardware on the user's computer, or third-party websites and services." },
+        { "heading": "API examples", "sectionAnchor": "api", "text": "The getUserMedia API lets software access audio and video from a device camera or microphone for uses such as recording or a video call. The Geolocation API exposes location information available on a device, while the Web Animations API lets code animate parts of a page. Each example gives software a defined way to request a capability." }
       ]
     },
     {
@@ -59,11 +64,12 @@
       "licenseUrl": "https://www.postgresql.org/about/licence/",
       "permissionReview": "allowed",
       "approvalBasis": "Public documentation, verified against the linked license; selected and fact-checked for the stated objective under the Stage 4 instruction.",
-      "sourceVersion": "PostgreSQL 18; accessed 2026-10-09",
+      "sourceVersion": "PostgreSQL 18; accessed 2026-10-16",
       "conceptSlug": "tables-and-records",
       "objectiveId": "table-record",
       "passages": [
-        { "heading": "Creating a New Table", "sectionAnchor": "tutorial-table", "text": "You can create a new table by specifying the table name, along with all column names and their types: CREATE TABLE weather ( city varchar(80), temp_lo int, temp_hi int, prcp real, date date );" }
+        { "heading": "Creating a New Table", "sectionAnchor": "tutorial-table", "text": "You can create a new table by specifying the table name, along with all column names and their types: CREATE TABLE weather ( city varchar(80), temp_lo int, temp_hi int, prcp real, date date );" },
+        { "heading": "Column types", "sectionAnchor": "tutorial-table", "text": "In the weather table, city uses varchar(80) for text, temp_lo and temp_hi use int for whole numbers, prcp uses real for a numeric measurement, and date uses the date type. Each column name describes a field and its type describes what kind of value belongs in that field." }
       ]
     },
     {
@@ -74,11 +80,12 @@
       "licenseUrl": "https://www.postgresql.org/about/licence/",
       "permissionReview": "allowed",
       "approvalBasis": "Public documentation, verified against the linked license; selected and fact-checked for the stated objective under the Stage 4 instruction.",
-      "sourceVersion": "PostgreSQL 18; accessed 2026-10-09",
+      "sourceVersion": "PostgreSQL 18; accessed 2026-10-16",
       "conceptSlug": "tables-and-records",
       "objectiveId": "table-record",
       "passages": [
-        { "heading": "Populating a Table With Rows", "sectionAnchor": "tutorial-populate", "text": "The INSERT statement is used to populate a table with rows: INSERT INTO weather VALUES ('San Francisco', 46, 50, 0.25, '1994-11-27'); The syntax used so far requires you to remember the order of the columns. An alternative syntax allows you to list the columns explicitly: INSERT INTO weather (city, temp_lo, temp_hi, prcp, date) VALUES ('San Francisco', 43, 57, 0.0, '1994-11-29');" }
+        { "heading": "Populating a Table With Rows", "sectionAnchor": "tutorial-populate", "text": "The INSERT statement is used to populate a table with rows: INSERT INTO weather VALUES ('San Francisco', 46, 50, 0.25, '1994-11-27'); The syntax used so far requires you to remember the order of the columns. An alternative syntax allows you to list the columns explicitly: INSERT INTO weather (city, temp_lo, temp_hi, prcp, date) VALUES ('San Francisco', 43, 57, 0.0, '1994-11-29');" },
+        { "heading": "Listing columns explicitly", "sectionAnchor": "tutorial-populate", "text": "An INSERT can name its target columns, so a reader can match each value to a field without relying on the table's default column order. For example, INSERT INTO weather (date, city, temp_hi, temp_lo) VALUES ('1994-11-29', 'Hayward', 54, 37) puts one row into weather with four named values; the precipitation field is omitted." }
       ]
     }
   ]

@@ -2,7 +2,9 @@ import { z } from 'zod';
 import { contentIdSchema, entityIdSchema, proseSchema, shortTextSchema, uniqueIds } from './common.js';
 import { sourceModeSchema } from './constants.js';
 
-const nodeSchema = z.strictObject({ id: contentIdSchema, label: shortTextSchema, description: proseSchema });
+export const diagramIconSchema = z.enum(['client', 'server', 'api', 'database', 'table', 'json', 'security', 'mobile', 'web', 'exchange', 'generic']);
+const nodeSchema = z.strictObject({ id: contentIdSchema, label: shortTextSchema, description: proseSchema,
+  icon: diagramIconSchema.optional() });
 const edgeSchema = z.strictObject({ id: contentIdSchema, from: contentIdSchema, to: contentIdSchema, label: shortTextSchema });
 const diagramFields = {
   id: contentIdSchema, title: shortTextSchema,
@@ -37,6 +39,9 @@ export const diagramSchema = z.discriminatedUnion('type', [
 export const lessonStepSchema = z.strictObject({
   id: contentIdSchema, heading: shortTextSchema,
   caption: proseSchema.refine(text => text.split(/\s+/u).length <= 100, 'Captions must contain at most 100 words.'),
+  explanation: proseSchema.min(80).max(1200),
+  workedExample: proseSchema.min(60).max(1200),
+  commonMistake: proseSchema.min(40).max(800),
   diagramId: contentIdSchema,
   highlightNodeIds: z.array(contentIdSchema).max(8).refine(uniqueIds),
   highlightEdgeIds: z.array(contentIdSchema).max(24).refine(uniqueIds),

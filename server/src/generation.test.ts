@@ -18,7 +18,11 @@ const generated = {
       { id: 'server', label: 'Server', description: 'Responds.' }],
     edges: [{ id: 'request', from: 'client', to: 'server', label: 'Requests' }] }],
   steps: Array.from({ length: 4 }, (_, i) => ({ id: `step${i}`, heading: `Step ${i}`,
-    caption: 'A client requests a page from a server.', diagramId: 'main',
+    caption: 'A client requests a page from a server.',
+    explanation: 'The client begins the exchange by asking the server for a page. The server can then send the requested page back to the client for the browser to display.',
+    workedExample: 'A browser asks a server for its home page. The server sends the page, and the browser displays it.',
+    commonMistake: 'Mistake: the server starts this request. Correction: the client asks for the page first.',
+    diagramId: 'main',
     highlightNodeIds: ['client'], highlightEdgeIds: ['request'], citationChunkIds: [chunkId] })),
   questions: Array.from({ length: 3 }, (_, i) => ({ id: `q${i}`, familyId: `family${i}`,
     prompt: `Question ${i}?`, kind: i === 2 ? 'application' : 'recall',
@@ -31,6 +35,7 @@ describe('Stage 6 generated lessons', () => {
   it('validates source and diagram references and strips keys from public snapshots', () => {
     const result = validateGenerated(generated, input);
     expect(result.lesson.steps).toHaveLength(4);
+    expect(result.lesson.steps[0]?.workedExample).toContain('browser');
     expect(result.round.questions).toHaveLength(3);
     expect(result.answerKeys.q0).toBe('o0');
     expect(JSON.stringify({ lesson: result.lesson, round: result.round })).not.toContain('correctOptionId');
@@ -43,6 +48,10 @@ describe('Stage 6 generated lessons', () => {
       highlightNodeIds: ['absent'] }, ...generated.steps.slice(1)] }, input)).toThrow();
     expect(() => validateGenerated({ ...generated, steps: [{ ...generated.steps[0],
       caption: 'Servers securely store webpages.' }, ...generated.steps.slice(1)] }, input)).toThrow();
+    expect(() => validateGenerated({ ...generated, steps: [{ ...generated.steps[0],
+      workedExample: 'The browser asks for a page, and the server securely sends that page back for display.' }, ...generated.steps.slice(1)] }, input)).toThrow();
+    expect(() => validateGenerated({ ...generated, steps: [{ ...generated.steps[0],
+      workedExample: undefined }, ...generated.steps.slice(1)] }, input)).toThrow();
   });
 
   it('repairs malformed JSON once and includes learner context in the prompt', async () => {
@@ -71,10 +80,11 @@ describe('Stage 6 generated lessons', () => {
       reducedMotion: false, createdAt: '2026-10-12T00:00:00Z' };
     const result = validateGenerated(generated, input);
     const saved = { id: result.lesson.id, conceptId, generationState: 'ready' as const,
-      lesson: result.lesson, round: result.round, citations: result.citations };
+      lesson: result.lesson, round: result.round, citations: result.citations, currentStep: 0 };
     const start = vi.fn(async () => saved);
     const get = vi.fn(async (owner: string, id: string) => owner === profile.userId && id === saved.id ? saved : null);
-    const service = { start, get, close: async () => {} } satisfies GenerationService;
+    const setPosition = vi.fn(async (_owner: string, _id: string, step: number) => step < 4 ? step : null);
+    const service = { start, get, setPosition, close: async () => {} } satisfies GenerationService;
     const app = createApp({ getProfile: async () => profile }, undefined, service);
     await request(app).post('/api/sessions').send({ conceptId, mode: 'learn', requestId: crypto.randomUUID() }).expect(401);
     const response = await request(app).post('/api/sessions').set('Authorization', 'Bearer good-token')
@@ -84,5 +94,10 @@ describe('Stage 6 generated lessons', () => {
     expect(response.text).not.toContain('feedbackCriteria');
     await request(app).get(`/api/sessions/${saved.id}`).set('Authorization', 'Bearer good-token').expect(200);
     expect(get).toHaveBeenCalledWith(profile.userId, saved.id);
+    await request(app).patch(`/api/sessions/${saved.id}/position`).set('Authorization', 'Bearer good-token')
+      .send({ step: 2 }).expect(200);
+    expect(setPosition).toHaveBeenCalledWith(profile.userId, saved.id, 2);
+    await request(app).patch(`/api/sessions/${saved.id}/position`).set('Authorization', 'Bearer good-token')
+      .send({ step: 4 }).expect(404);
   });
 });
