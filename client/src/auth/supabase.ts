@@ -9,7 +9,7 @@ export function getSupabaseClient(): SupabaseClient | null {
   const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
   if (!url || !key) return (browserClient = null);
   browserClient = createClient(url, key, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, flowType: 'pkce' },
   });
   return browserClient;
 }

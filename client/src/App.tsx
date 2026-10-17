@@ -8,6 +8,7 @@ import { BackgroundAsciiWake } from '@/components/ui/background-ascii-wake';
 import { ButtonUiLink } from '@/components/ui/button-ui';
 import { LessonView } from '@/views/LessonView';
 import { QuizView } from '@/views/QuizView';
+import { AuthCallbackView } from '@/views/AuthCallbackView';
 
 export function App() {
   const { session, profile, status } = useSession();
@@ -21,12 +22,13 @@ export function App() {
       <nav className="header-inner" aria-label="Main navigation">
         <Link className="brand" to={inProduct ? '/home' : '/'}><img className="brand-mark" src="/logo.svg" alt="" /> LearningCompanion</Link>
         {inProduct && <div className="main-links"><NavLink to="/home">Home</NavLink><NavLink to="/learn">Learn</NavLink></div>}
-        {inProduct && <span className="profile-badge"><CircleUserRound size={19} /> {profile?.isAnonymous ? 'Guest' : 'My learning'}</span>}
+        {inProduct && <span className="profile-badge"><CircleUserRound size={19} /> My learning</span>}
       </nav>
     </header>
     <main id="main-content" className="app-main" tabIndex={-1} data-reduced-motion={profile?.reducedMotion || undefined}>
       <Routes>
         <Route path="/" element={<FoundationView />} />
+        <Route path="/auth/callback" element={<AuthCallbackView />} />
         <Route path="/onboarding" element={status === 'loading' ? <p role="status">Loading…</p> : session && profile ? <OnboardingView /> : <Navigate to="/" replace />} />
         <Route path="/home" element={gated(<HomeView />)} />
         <Route path="/learn" element={gated(<CatalogueView />)} />

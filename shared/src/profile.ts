@@ -7,7 +7,7 @@ export const experienceLevelSchema = z.enum(['new', 'some', 'experienced']);
 export const interestAreaSchema = areaSchema.exclude(['other']);
 export const techInterestSchema = z.enum([
   'web_communication', 'apis', 'databases', 'cloud', 'cybersecurity', 'web_development',
-  'ai_ml', 'data_science', 'mobile', 'game_development', 'devops', 'ui_ux', 'hardware_iot',
+  'ai_ml', 'data_science', 'mobile', 'game_development', 'devops', 'ui_ux', 'hardware_iot', 'operating_systems',
 ]);
 export const profileSchema = z.strictObject({
   userId: entityIdSchema,

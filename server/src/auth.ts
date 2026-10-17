@@ -17,15 +17,15 @@ const relatedAreas: Partial<Record<Profile['interests'][number], string[]>> = {
   ai_ml: ['apis', 'databases'], data_science: ['databases', 'apis'], ui_ux: ['web_communication'],
 };
 
-function recommend(concepts: HomeData['concepts'], profile: Profile,
+export function recommend(concepts: HomeData['concepts'], profile: Profile,
   progressRows: { concept_id: string; learning_status: string; latest_completed_round_id: string | null;
     last_reviewed_at: string | null; updated_at: string }[],
   edges: { from_concept_id: string; to_concept_id: string }[], successStreaks: Map<string, number>): Recommendations {
   const progress = new Map(progressRows.map(row => [row.concept_id, row]));
   const status = (conceptId: string) => progress.get(conceptId)?.learning_status ?? 'not_assessed';
   const availableNew = concepts.filter(concept => concept.contentAvailable && concept.status === 'not_assessed');
-  const matchesInterest = (area: string) => profile.interests.some(interest => (relatedAreas[interest] ?? []).includes(area));
-  const preferred = availableNew.find(concept => matchesInterest(concept.area));
+  const preferred = profile.interests.map(interest => availableNew.find(concept =>
+    (relatedAreas[interest] ?? []).includes(concept.area))).find(Boolean);
   const missingPrerequisite = preferred && availableNew.find(concept => edges.some(edge =>
     edge.from_concept_id === concept.id && edge.to_concept_id === preferred.id && status(concept.id) !== 'demonstrated_understanding'));
   const learnConcept = missingPrerequisite ?? preferred ?? availableNew.find(concept => !edges.some(edge =>
@@ -81,7 +81,7 @@ export function createProfileService(
   return {
     async getProfile(accessToken) {
       const { data: { user }, error: authError } = await verifier.auth.getUser(accessToken);
-      if (authError || !user) throw new ApiError(401, 'UNAUTHENTICATED', 'A valid session is required.');
+      if (authError || !user || user.is_anonymous) throw new ApiError(401, 'UNAUTHENTICATED', 'Sign in with Google to continue.');
       // Database requests use the verified learner's JWT so RLS remains effective.
       // This client never receives a service-role key.
       const scoped = createClient(url, publishableKey, {
@@ -93,7 +93,7 @@ export function createProfileService(
         .eq('user_id', user.id).single();
       if (profileError || !profile) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Your profile is temporarily unavailable.');
       return profileSchema.parse({
-        userId: profile.user_id, isAnonymous: user.is_anonymous === true,
+        userId: profile.user_id, isAnonymous: false,
         interests: profile.interests, experienceLevel: profile.experience_level,
         onboardingComplete: profile.onboarding_complete, timezone: profile.timezone,
         reducedMotion: profile.reduced_motion, createdAt: profile.created_at,

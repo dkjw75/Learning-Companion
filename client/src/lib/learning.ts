@@ -9,7 +9,7 @@ export type SavedTopicNode = { id: string; parentKey: string; title: string; obj
 async function authorized<T>(path: string, init?: RequestInit): Promise<T> {
   const client = getSupabaseClient();
   const { data: { session } } = await client?.auth.getSession() ?? { data: { session: null } };
-  if (!session) throw new Error('Your guest session could not be restored. Please try again.');
+  if (!session) throw new Error('Please sign in with Google to continue.');
   const response = await fetch(`/api${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', ...init?.headers },

@@ -57,7 +57,7 @@ export function createApp(profileService: ProfileService = createProfileService(
   app.post('/api/onboarding/diagnostic', async (req, res) => {
     const token = tokenFrom(req.get('Authorization'));
     const parsed = completeOnboardingSchema.safeParse(req.body);
-    if (!parsed.success) throw new ApiError(400, 'INVALID_INPUT', 'Choose your interests and answer all five questions, or skip the check.');
+    if (!parsed.success) throw new ApiError(400, 'INVALID_INPUT', 'Choose your interests and experience level before continuing.');
     if (!profileService.completeOnboarding) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not save your starting point.');
     res.json({ data: await profileService.completeOnboarding(token, parsed.data) });
   });

@@ -98,7 +98,7 @@ function ConceptCard({ concept, reason, dueAt }: { concept: ConceptChoice; reaso
   </div>;
 }
 export function HomeView() {
-  const { profile, session } = useSession();
+  const { session } = useSession();
   const { data, isLoading, isError, refetch } = useHomeData();
   const topics = useQuery({ queryKey: ['topics', session?.userId], queryFn: fetchTopics, enabled: Boolean(session) });
   if (isLoading) return <p className="load-state" role="status">Loading your home…</p>;
@@ -124,7 +124,7 @@ export function HomeView() {
       </section>
     </div>
     <ActivityPanel data={data} />
-    <div className="home-bottom"><span>{profile?.isAnonymous ? 'Your guest progress stays with this browser.' : 'Your learning progress is saved.'}</span><Link to="/learn">View skill tree <ArrowRight size={15} /></Link></div>
+    <div className="home-bottom"><span>Your learning progress is saved.</span><Link to="/learn">View skill tree <ArrowRight size={15} /></Link></div>
   </div>;
 }
 
