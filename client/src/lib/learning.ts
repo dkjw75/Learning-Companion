@@ -1,9 +1,10 @@
-import { homeEnvelopeSchema, type CompleteOnboarding, type HomeData, type Profile } from '@learning-companion/shared';
+import { homeEnvelopeSchema, type CompleteOnboarding, type HomeData, type LearningStatus, type Profile } from '@learning-companion/shared';
 import { getSupabaseClient } from '@/auth/supabase';
 
 export type ConceptChoice = HomeData['concepts'][number];
 export type { HomeData };
-export type SavedTopicNode = { id: string; parentKey: string; title: string; objective: string };
+export type SavedTopicNode = { id: string; parentKey: string; title: string; objective: string;
+  status: LearningStatus; sessionId: string | null; citations: { title: string; url: string }[] };
 
 async function authorized<T>(path: string, init?: RequestInit): Promise<T> {
   const client = getSupabaseClient();
@@ -26,4 +27,7 @@ export const fetchHome = async () => homeEnvelopeSchema.parse({ data: await auth
 export const fetchTopics = () => authorized<SavedTopicNode[]>('/topics');
 export const suggestTopics = (parentKey: string, requestId: string, prompt?: string) => authorized<SavedTopicNode[]>('/topics/suggestions', {
   method: 'POST', body: JSON.stringify({ parentKey, requestId, ...(prompt ? { prompt } : {}) }), signal: AbortSignal.timeout(65000),
+});
+export const discoverTopicSources = (nodeId: string) => authorized<{ urls: string[]; ready: boolean }>(`/topics/${nodeId}/discover`, {
+  method: 'POST', signal: AbortSignal.timeout(140000),
 });

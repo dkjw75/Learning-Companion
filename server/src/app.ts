@@ -99,6 +99,14 @@ export function createApp(profileService: ProfileService = createProfileService(
       status === 429 ? 'You have reached today’s suggestion limit.' : 'Could not suggest topics right now. Please try again.');
     }
   });
+  app.post('/api/topics/:id/discover', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const token = tokenFrom(req.get('Authorization'));
+    if (!z.uuid().safeParse(req.params.id).success) throw new ApiError(404, 'NOT_FOUND', 'That topic is unavailable.');
+    if (!topicSuggestionService) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not search for lesson sources.');
+    const profile = await profileService.getProfile(token);
+    res.json({ data: await topicSuggestionService.prepare(profile, req.params.id) });
+  });
   app.post('/api/sessions', async (req, res) => {
       res.setHeader('Cache-Control', 'no-store');
       const token = tokenFrom(req.get('Authorization'));

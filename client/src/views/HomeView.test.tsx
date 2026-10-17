@@ -4,16 +4,16 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it, vi } from 'vitest';
 import { CatalogueView } from './HomeView';
 
-const { fetchHome, fetchTopics, suggestTopics, startLesson } = vi.hoisted(() => ({ fetchHome: vi.fn(), fetchTopics: vi.fn(), suggestTopics: vi.fn(), startLesson: vi.fn() }));
-vi.mock('@/lib/learning', () => ({ fetchHome, fetchTopics, suggestTopics }));
+const { fetchHome, fetchTopics, suggestTopics, discoverTopicSources, startLesson } = vi.hoisted(() => ({ fetchHome: vi.fn(), fetchTopics: vi.fn(), suggestTopics: vi.fn(), discoverTopicSources: vi.fn(), startLesson: vi.fn() }));
+vi.mock('@/lib/learning', () => ({ fetchHome, fetchTopics, suggestTopics, discoverTopicSources }));
 vi.mock('@/lib/sessions', () => ({ startLesson }));
 vi.mock('@/auth/session-context', () => ({ useSession: () => ({ session: { userId: 'student' } }) }));
 
 it('shows one root, ten branches, and the four saved topics in their branches', async () => {
   fetchTopics.mockResolvedValue([
-    { id: 'ci', parentKey: 'root:Software Development', title: 'CI/CD', objective: 'Understand the CI/CD workflow' },
-    { id: 'deploy', parentKey: 'node:ci', title: 'Automated Deployment', objective: 'Explain automated deployment' },
-    { id: 'pipeline', parentKey: 'node:ci', title: 'Building a CI Pipeline', objective: 'Build a continuous integration pipeline' },
+    { id: 'ci', parentKey: 'root:Software Development', title: 'CI/CD', objective: 'Understand the CI/CD workflow', status: 'not_assessed', sessionId: null, citations: [] },
+    { id: 'deploy', parentKey: 'node:ci', title: 'Automated Deployment', objective: 'Explain automated deployment', status: 'explored', sessionId: '00000000-0000-4000-8000-000000000301', citations: [{ title: 'Deployment guide', url: 'https://example.com/deploy' }] },
+    { id: 'pipeline', parentKey: 'node:ci', title: 'Building a CI Pipeline', objective: 'Build a continuous integration pipeline', status: 'developing', sessionId: '00000000-0000-4000-8000-000000000302', citations: [{ title: 'Pipeline guide', url: 'https://example.com/pipeline' }] },
   ]);
   fetchHome.mockResolvedValue({ concepts: [
     ['clients-and-servers', 'Clients and servers', 'not_assessed'],
@@ -46,7 +46,7 @@ it('shows one root, ten branches, and the four saved topics in their branches', 
   expect(ci?.querySelectorAll(':scope > .skill-tree-children > .skill-tree-item')).toHaveLength(2);
   expect(within(tree).getByRole('heading', { name: 'Databases and Data Engineering' }).closest('li')).toHaveTextContent('Tables and records');
   expect(within(tree).queryAllByRole('link')).toHaveLength(0);
-  expect([...tree.querySelectorAll('.skill-tree-children .skill-tree-children .skill-hex')].map(node => node.getAttribute('data-status'))).toEqual(['developing', 'not_assessed', 'not_assessed', 'not_assessed', 'demonstrated_understanding', 'not_assessed', 'explored']);
+  expect([...tree.querySelectorAll('.skill-tree-children .skill-tree-children .skill-hex')].map(node => node.getAttribute('data-status'))).toEqual(['developing', 'not_assessed', 'explored', 'developing', 'demonstrated_understanding', 'not_assessed', 'explored']);
   expect(tree.querySelectorAll('.skill-status-legend .skill-hex')).toHaveLength(4);
   expect(tree.querySelectorAll('.skill-branch > .skill-hex[data-status]')).toHaveLength(0);
 
@@ -94,6 +94,22 @@ it('shows one root, ten branches, and the four saved topics in their branches', 
   fireEvent.click(within(tree).getByText('HTTP requests and responses').closest('button')!);
   panel = screen.getByRole('complementary', { name: 'HTTP requests and responses' });
   expect(within(panel).getByRole('link', { name: 'Resume lesson' })).toHaveAttribute('href', '/learn/00000000-0000-4000-8000-000000000201');
+
+  fireEvent.click(within(tree).getByText('Automated Deployment').closest('button')!);
+  panel = screen.getByRole('complementary', { name: 'Automated Deployment' });
+  expect(panel.querySelector('.skill-status-badge')).toHaveAttribute('data-status', 'explored');
+  expect(within(panel).getByRole('link', { name: 'Deployment guide ↗' })).toHaveAttribute('href', 'https://example.com/deploy');
+  expect(within(panel).getByRole('link', { name: 'Resume Lesson' })).toHaveAttribute('href', '/learn/00000000-0000-4000-8000-000000000301');
+
+  fireEvent.click(within(tree).getByText('Building a CI Pipeline').closest('button')!);
+  panel = screen.getByRole('complementary', { name: 'Building a CI Pipeline' });
+  expect(panel.querySelector('.skill-status-badge')).toHaveAttribute('data-status', 'developing');
+  expect(within(panel).getByRole('link', { name: 'Review Lesson Again' })).toHaveAttribute('href', '/learn/00000000-0000-4000-8000-000000000302');
+
+  fireEvent.click(within(tree).getByText('CI/CD').closest('button')!);
+  panel = screen.getByRole('complementary', { name: 'CI/CD' });
+  expect(within(panel).getByRole('heading', { name: 'Citations' })).toBeVisible();
+  expect(within(panel).getByRole('button', { name: 'Learn' })).toBeVisible();
 
   fireEvent.click(within(tree).getByText('Clients and servers').closest('button')!);
   panel = screen.getByRole('complementary', { name: 'Clients and servers' });

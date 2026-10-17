@@ -42,6 +42,7 @@ export function QuizView() {
         ...old, attempts: old.attempts.some(attempt => attempt.evidence.requestId === requestId)
           ? old.attempts : [...old.attempts, result],
       });
+      void queryClient.invalidateQueries({ queryKey: ['topics'] });
       if (result.completed) void queryClient.invalidateQueries({ queryKey: ['home'] });
     } catch {
       setSubmitError(questionId);

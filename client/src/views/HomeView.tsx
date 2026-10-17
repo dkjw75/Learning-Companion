@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { ArrowRight, BookOpen, BrainCircuit, CalendarDays, ChartNoAxesCombined, CircleHelp, Cloud, Code2, Cpu, Database, Minus, MonitorCog, Network, PanelsTopLeft, Plus, Shield, Sparkles, UserRound, X } from 'lucide-react';
 import { learningStatusLabels } from '@learning-companion/shared';
 import { useSession } from '@/auth/session-context';
-import { fetchHome, fetchTopics, suggestTopics, type ConceptChoice, type HomeData, type SavedTopicNode } from '@/lib/learning';
+import { discoverTopicSources, fetchHome, fetchTopics, suggestTopics, type ConceptChoice, type HomeData, type SavedTopicNode } from '@/lib/learning';
 import ContributionSkyline from '@/components/ui/contribution-skyline';
 import { ButtonUi, ButtonUiLink } from '@/components/ui/button-ui';
 import { startLesson } from '@/lib/sessions';
@@ -59,6 +59,32 @@ function LessonAction({ concept }: { concept: ConceptChoice }) {
     {error && <p role="alert">Could not prepare your lesson. <ButtonUi variant="quiet" size="small" onClick={() => { void start(); }}>Try again</ButtonUi></p>}
   </div>;
 }
+function SuggestedLessonAction({ topic }: { topic: SavedTopicNode }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [phase, setPhase] = useState<'sources' | 'lesson' | null>(null);
+  const [error, setError] = useState(false);
+  if (topic.sessionId) return <ButtonUiLink to={`/learn/${topic.sessionId}`}>
+    {topic.status === 'explored' ? 'Resume Lesson' : 'Review Lesson Again'}
+  </ButtonUiLink>;
+  async function learn() {
+    setPhase('sources'); setError(false);
+    try {
+      const result = await discoverTopicSources(topic.id);
+      if (!result.ready) { setError(true); return; }
+      setPhase('lesson');
+      const saved = await startLesson(topic.id, crypto.randomUUID());
+      void queryClient.invalidateQueries({ queryKey: ['topics'] });
+      navigate(`/learn/${saved.id}`);
+    }
+    catch { setError(true); }
+    finally { setPhase(null); }
+  }
+  return <div className="skill-lesson-action">
+    <ButtonUi disabled={phase !== null} onClick={() => { void learn(); }}>{phase === 'sources' ? 'Finding sources…' : phase === 'lesson' ? 'Preparing lesson…' : 'Learn'}</ButtonUi>
+    {error && <p role="alert">Could not prepare this lesson. <ButtonUi variant="quiet" size="small" onClick={() => { void learn(); }}>Try again</ButtonUi></p>}
+  </div>;
+}
 function ActivityPanel({ data }: { data: HomeData }) {
   return <section className="activity-panel" aria-labelledby="activity-heading">
     <div className="section-heading"><div><span className="eyebrow"><CalendarDays size={14} /> LEARNING HISTORY</span><h2 id="activity-heading">Your activity</h2><p>Lesson sessions started per day over the past year.</p></div></div>
@@ -102,7 +128,7 @@ function TreeChildren({ parentKey, topics, concepts = [], selectedId, onSelect, 
     <TreeChildren parentKey={`concept:${lesson.id}`} topics={topics} selectedId={selectedId} onSelect={onSelect} onExpand={onExpand} />
   </li>)}{children.map(topic => <li className="skill-tree-item" data-topic-id={topic.id} key={topic.id}>
     <div className="skill-topic-node"><button className="skill-node-button skill-generated-button" type="button"
-      aria-pressed={selectedId === topic.id} onClick={() => onSelect(topic.id)}><span className="skill-hex" data-status="not_assessed"><BookOpen size={18} /></span><span>{topic.title}</span></button>
+      aria-pressed={selectedId === topic.id} onClick={() => onSelect(topic.id)}><span className="skill-hex" data-status={topic.status}><BookOpen size={18} /></span><span>{topic.title}</span><span className="sr-only">Learning status: {learningStatusLabels[topic.status]}</span></button>
       <TopicExpansionButton topic={topic.title} onOpen={trigger => onExpand(`node:${topic.id}`, topic.title, trigger)} />
     </div>
     <TreeChildren parentKey={`node:${topic.id}`} topics={topics} selectedId={selectedId} onSelect={onSelect} onExpand={onExpand} />
@@ -267,10 +293,13 @@ function SkillTree({ concepts, topics }: { concepts: ConceptChoice[]; topics: Sa
       </section>
       <div className="skill-detail-action"><LessonAction key={selected.id} concept={selected} /></div>
     </aside>}
-    {selectedTopic && <aside className="skill-detail-panel" aria-labelledby="skill-detail-title"><div className="skill-detail-head"><span className="eyebrow">TOPIC</span></div>
+    {selectedTopic && <aside className="skill-detail-panel" aria-labelledby="skill-detail-title"><div className="skill-detail-head"><span className="eyebrow">TOPIC</span><span className="skill-status-badge" data-status={selectedTopic.status}>{learningStatusLabels[selectedTopic.status]}</span></div>
       <button type="button" className="skill-detail-close" aria-label="Close topic details" onClick={() => setSelectedId(null)}><X size={19} /></button>
       <h2 id="skill-detail-title">{selectedTopic.title}</h2><section className="skill-detail-section"><h3>Learning objective</h3><p>{selectedTopic.objective}</p></section>
-      <div className="skill-detail-action"><p className="skill-lesson-unavailable">Lesson unavailable right now.</p></div>
+      <section className="skill-detail-section"><h3>Citations</h3>
+        {selectedTopic.citations.length ? <ul>{selectedTopic.citations.map(citation => <li key={citation.url}><a href={citation.url} target="_blank" rel="noopener noreferrer">{citation.title} ↗</a></li>)}</ul> : <p>No citations available yet.</p>}
+      </section>
+      <div className="skill-detail-action"><SuggestedLessonAction key={selectedTopic.id} topic={selectedTopic} /></div>
     </aside>}
     {expandingFrom && <div className="topic-expansion-overlay" onClick={event => { if (!suggesting && event.target === event.currentTarget) closeExpansion(); }} onKeyDown={event => {
       event.stopPropagation();
