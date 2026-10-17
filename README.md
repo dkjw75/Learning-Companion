@@ -36,7 +36,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The browser suite runs desktop and mobile Chromium checks, reusing an existing local development stack when available. Shared output is built before dev, type checks, and tests. Production builds go to each workspace's `dist/`; `npm run start -w @learning-companion/server` runs the compiled API. Vite preview is a static preview and has no API proxy; use `npm run dev` for the local full-stack check. Vercel routing is configured in `client/vercel.mjs` and `server/vercel.json`.
+The browser suite runs desktop and mobile Chromium checks, reusing an existing local development stack when available. Shared output is built before dev, type checks, and tests. Production builds go to each workspace's `dist/`; `npm run start -w @learning-companion/server` runs the compiled API. Vite preview is a static preview and has no API proxy; use `npm run dev` for the local full-stack check. Vercel routing is configured in `client/vercel.json` and `server/vercel.json`.
 
 ## Vercel preview deployment
 
@@ -44,7 +44,7 @@ Create two Vercel projects from this repository. Set the **Root Directory** to `
 
 Deploy the API project first. Set its Preview environment variables to `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `DATABASE_URL`, `GEMINI_API_KEY`, and `GEMINI_MODEL`. `GEMINI_SEARCH_MODEL` and the `AI_*_DAILY_LIMIT` values are optional overrides. Enter server-only values in Vercel settings, never in a `VITE_` variable. Check `https://<api-project>.vercel.app/api/health` after deployment; this checks routing, not database or provider readiness.
 
-For the frontend project, set Preview variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `API_ORIGIN` (the API project's HTTPS origin without a path). Its rewrite keeps browser requests on the frontend origin and forwards `/api/*` to the API; the following rewrite serves `index.html` for client routes. Configure Supabase Authentication URL Configuration to allow the exact frontend URL followed by `/auth/callback`. Confirm the Google provider uses the Supabase callback URL. Apply migrations to this app's Supabase project with `npm run db:remote:dry-run` and `npm run db:remote:push` before testing live flows. After changing Vercel environment variables, redeploy the affected project.
+For the frontend project, set Preview variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Its rewrite keeps browser requests on the frontend origin and forwards `/api/*` to the API URL in `client/vercel.json`; the following rewrite serves `index.html` for client routes. Update that destination if the API domain changes. Configure Supabase Authentication URL Configuration to allow the exact frontend URL followed by `/auth/callback`. Confirm the Google provider uses the Supabase callback URL. Apply migrations to this app's Supabase project with `npm run db:remote:dry-run` and `npm run db:remote:push` before testing live flows. After changing Vercel environment variables, redeploy the affected project.
 
 ## Contract boundaries
 
