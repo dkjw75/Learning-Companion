@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import express, { type ErrorRequestHandler } from 'express';
-import { type ApiErrorCode, type Health, type SuccessEnvelope, completeOnboardingSchema, errorEnvelopeSchema, hintRequestSchema, submitAnswerRequestSchema } from '@learning-companion/shared';
+import { type ApiErrorCode, type Health, type SuccessEnvelope, completeOnboardingSchema, errorEnvelopeSchema, hintRequestSchema, submitAnswerRequestSchema, tutorRequestSchema } from '@learning-companion/shared';
 import { createProfileService, type ProfileService } from './auth.js';
 import { ApiError } from './errors.js';
 import type { LocalRunsService } from './ai-runs.js';
@@ -9,11 +9,12 @@ import type { GenerationService } from './generation.js';
 import { createAssessmentService, type AssessmentService } from './assessment.js';
 import { z } from 'zod';
 import type { TopicSuggestionService } from './topic-suggestions.js';
+import type { TutorService } from './tutor.js';
 
 export function createApp(profileService: ProfileService = createProfileService(),
   localRuns?: LocalRunsService, generationService?: GenerationService,
   assessmentService: AssessmentService = createAssessmentService(),
-  topicSuggestionService?: TopicSuggestionService) {
+  topicSuggestionService?: TopicSuggestionService, tutorService?: TutorService) {
   const app = express();
   app.disable('x-powered-by');
   app.use((_req, res, next) => {
@@ -138,6 +139,26 @@ export function createApp(profileService: ProfileService = createProfileService(
       if (currentStep === null) throw new ApiError(404, 'NOT_FOUND', 'Lesson step not found.');
       res.json({ data: { currentStep } });
   });
+  app.get('/api/sessions/:id/messages', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const token = tokenFrom(req.get('Authorization'));
+    if (!z.uuid().safeParse(req.params.id).success) throw new ApiError(404, 'NOT_FOUND', 'Lesson not found.');
+    const before = req.query.before === undefined ? undefined : z.coerce.number().int().nonnegative().safeParse(req.query.before);
+    if (before && !before.success) throw new ApiError(400, 'INVALID_INPUT', 'Could not load earlier messages.');
+    if (!tutorService) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Tutor is temporarily unavailable.');
+    const profile = await profileService.getProfile(token);
+    res.json({ data: await tutorService.list(profile.userId, req.params.id, before?.data) });
+  });
+  app.post('/api/sessions/:id/tutor', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const token = tokenFrom(req.get('Authorization'));
+    if (!z.uuid().safeParse(req.params.id).success) throw new ApiError(404, 'NOT_FOUND', 'Lesson not found.');
+    const parsed = tutorRequestSchema.safeParse(req.body);
+    if (!parsed.success) throw new ApiError(400, 'INVALID_INPUT', 'Enter a question of up to 2,000 characters.');
+    if (!tutorService) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Tutor is temporarily unavailable.');
+    const profile = await profileService.getProfile(token);
+    res.json({ data: await tutorService.send(profile, req.params.id, parsed.data) });
+  });
   app.post('/api/rounds/:id/answers', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     const token = tokenFrom(req.get('Authorization'));
@@ -157,7 +178,7 @@ export function createApp(profileService: ProfileService = createProfileService(
     res.json({ data: await assessmentService.hint(token, req.params.id, parsed.data.questionId, parsed.data.requestId) });
   });
   app.use((_req, _res, next) => next(new ApiError(404, 'NOT_FOUND', 'Resource not found.')));
-  const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _next) => {
+  const errorHandler: ErrorRequestHandler = (error: unknown, req, res, _next) => {
     let status = 500;
     let code: ApiErrorCode = 'INTERNAL_ERROR';
     let message = 'An unexpected error occurred.';
@@ -176,6 +197,10 @@ export function createApp(profileService: ProfileService = createProfileService(
         PROVIDER_FAILURE: [503, 'PROVIDER_FAILURE', 'Could not prepare this lesson. Please try again.'],
       } as const;
       [status, code, message] = mapped[error.code];
+      if (req.path.endsWith('/tutor')) message = error.code === 'QUOTA' ? 'Tutor questions are unavailable for today.'
+        : error.code === 'PENDING' ? 'Your question is still being answered.'
+        : error.code === 'IDEMPOTENCY_CONFLICT' ? 'This question could not be retried.'
+        : 'Could not answer your question. Please try again.';
     } else if (typeof error === 'object' && error !== null && 'type' in error) {
       if (error.type === 'entity.parse.failed') {
         status = 400; code = 'INVALID_INPUT'; message = 'Request body must be valid JSON.';

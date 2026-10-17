@@ -5,8 +5,11 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import userEvent from '@testing-library/user-event';
 import { QuizView } from './QuizView';
 
-const { fetchLesson, submitAnswer, requestHint, saveLessonStep } = vi.hoisted(() => ({ fetchLesson: vi.fn(), submitAnswer: vi.fn(), requestHint: vi.fn(), saveLessonStep: vi.fn() }));
-vi.mock('@/lib/sessions', () => ({ fetchLesson, submitAnswer, requestHint, saveLessonStep }));
+const { fetchLesson, submitAnswer, requestHint, saveLessonStep, fetchTutorHistory, sendTutorMessage } = vi.hoisted(() => ({
+  fetchLesson: vi.fn(), submitAnswer: vi.fn(), requestHint: vi.fn(), saveLessonStep: vi.fn(),
+  fetchTutorHistory: vi.fn().mockResolvedValue({ messages: [], nextBefore: null }), sendTutorMessage: vi.fn(),
+}));
+vi.mock('@/lib/sessions', () => ({ fetchLesson, submitAnswer, requestHint, saveLessonStep, fetchTutorHistory, sendTutorMessage }));
 
 const steps = [{ id: 'one', heading: 'Start' }, { id: 'two', heading: 'Connect' }];
 
@@ -53,6 +56,7 @@ describe('saved quiz', () => {
     </Routes></MemoryRouter></QueryClientProvider>);
 
     expect(await screen.findByRole('heading', { name: 'HTTP requests' })).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: 'Tutor chat' })).toHaveTextContent('Ask or highlight a text to clarify anything here!');
     expect(screen.getByRole('button', { name: 'End lesson' })).toBeDisabled();
     expect(fetchLesson).toHaveBeenCalledWith(id);
     expect(screen.getAllByText(/QUESTION \d OF 3/)).toHaveLength(3);

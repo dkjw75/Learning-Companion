@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import type { SavedLessonSession } from '@/lib/sessions';
 import { LessonView } from './LessonView';
 
-const { fetchLesson, saveLessonStep } = vi.hoisted(() => ({ fetchLesson: vi.fn(), saveLessonStep: vi.fn() }));
-vi.mock('@/lib/sessions', () => ({ fetchLesson, saveLessonStep }));
+const { fetchLesson, saveLessonStep, fetchTutorHistory, sendTutorMessage } = vi.hoisted(() => ({
+  fetchLesson: vi.fn(), saveLessonStep: vi.fn(), fetchTutorHistory: vi.fn(), sendTutorMessage: vi.fn(),
+}));
+vi.mock('@/lib/sessions', () => ({ fetchLesson, saveLessonStep, fetchTutorHistory, sendTutorMessage }));
 
 const depth = {
   explanation: 'The client begins by sending a request to the server. This starts the exchange, and the server can then return a response for the client to use.',
@@ -52,7 +54,8 @@ function showLesson() {
 }
 
 describe('guided lesson player', () => {
-  beforeEach(() => { fetchLesson.mockReset(); saveLessonStep.mockReset(); });
+  beforeEach(() => { fetchLesson.mockReset(); saveLessonStep.mockReset(); sendTutorMessage.mockReset();
+    fetchTutorHistory.mockReset().mockResolvedValue({ messages: [], nextBefore: null }); });
   it('renders labels as text, lets students select parts, and saves step navigation', async () => {
     fetchLesson.mockResolvedValue(session);
     saveLessonStep.mockImplementation(async (_id: string, step: number) => step);
@@ -99,5 +102,45 @@ describe('guided lesson player', () => {
     expect(screen.getByRole('table')).toHaveTextContent('id');
     expect(screen.getByRole('table').querySelector('tbody tr')).toHaveClass('highlight');
     expect(saveLessonStep).not.toHaveBeenCalled();
+  });
+
+  it('adds selected lesson text to the tutor question draft', async () => {
+    fetchLesson.mockResolvedValue(session);
+    const reply = { id: crypto.randomUUID(), sequenceNo: 1, role: 'assistant', body: 'The client asks first.',
+      selectedText: null, stepId: 'one', citationChunkIds: [], sourceMode: 'unverified', highlightNodeIds: [], highlightEdgeIds: [], createdAt: new Date().toISOString() };
+    const userMessage = { ...reply, id: crypto.randomUUID(), sequenceNo: 0, role: 'user', body: 'Can you explain this?', selectedText: depth.explanation };
+    let finish!: (value: unknown) => void;
+    sendTutorMessage.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const rendered = showLesson();
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Your question' })).toBeEnabled());
+    const explanation = screen.getByText(depth.explanation);
+    const range = document.createRange();
+    range.selectNodeContents(explanation);
+    range.getBoundingClientRect = () => ({ top: 0, bottom: 20, left: 0, right: 200, width: 200, height: 20, x: 0, y: 0, toJSON: () => ({}) });
+    const selected = window.getSelection()!;
+    selected.removeAllRanges();
+    selected.addRange(range);
+    fireEvent.mouseUp(explanation);
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Ask Tutor' }));
+    expect(screen.getByText(depth.explanation, { selector: 'blockquote' })).toBeVisible();
+    await userEvent.setup().type(screen.getByRole('textbox', { name: 'Your question' }), 'Can you explain this?');
+    expect(screen.getByRole('textbox', { name: 'Your question' })).toHaveValue('Can you explain this?');
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Send message' }));
+    expect(screen.getByRole('button', { name: 'Sending message' })).toBeDisabled();
+    expect(screen.getByRole('status', { name: '' })).toHaveTextContent('Tutor is thinking…');
+    expect(sendTutorMessage).toHaveBeenCalledWith(session.id, expect.objectContaining({
+      message: 'Can you explain this?', selectedText: depth.explanation, stepId: 'one', requestId: expect.any(String),
+    }));
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Sending message' }));
+    expect(sendTutorMessage).toHaveBeenCalledTimes(1);
+    fetchTutorHistory.mockResolvedValue({ messages: [userMessage, reply], nextBefore: null });
+    finish({ userMessage, reply });
+    await waitFor(() => expect(document.querySelector('.tutor-message-user')).toHaveTextContent('Can you explain this?'));
+    expect(screen.getByText('Ask or highlight a text to clarify anything here!')).toHaveClass('tutor-message-ai');
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Your question' })).toHaveValue(''));
+    rendered.unmount();
+    showLesson();
+    expect(await screen.findByText('The client asks first.')).toHaveClass('tutor-message-ai');
+    expect(document.querySelector('.tutor-message-user blockquote')).toHaveTextContent(depth.explanation);
   });
 });

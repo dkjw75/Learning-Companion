@@ -9,7 +9,34 @@ vi.mock('@/lib/learning', () => ({ fetchHome, fetchTopics, suggestTopics, discov
 vi.mock('@/lib/sessions', () => ({ startLesson }));
 vi.mock('@/auth/session-context', () => ({ useSession: () => ({ session: { userId: 'student' } }) }));
 
-it('shows one root, ten branches, and the four saved topics in their branches', async () => {
+it('starts a new user tree without the four catalogue lessons', async () => {
+  fetchTopics.mockResolvedValue([]);
+  fetchHome.mockResolvedValue({ concepts: [
+    'Clients and servers', 'HTTP requests and responses', 'What an API does', 'Tables and records',
+  ].map((title, index) => ({ id: String(index), slug: ['clients-and-servers', 'http-requests-and-responses', 'what-an-api-does', 'tables-and-records'][index],
+    title, status: 'not_assessed', sessionId: null, objectives: [], citations: [], contentAvailable: true })),
+  recommendations: { learn: null, review: [] } });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={client}><MemoryRouter><CatalogueView /></MemoryRouter></QueryClientProvider>);
+  const tree = await screen.findByRole('region', { name: 'Skill tree' });
+  expect(tree.querySelectorAll('.skill-branch')).toHaveLength(10);
+  for (const title of ['Clients and servers', 'HTTP requests and responses', 'What an API does', 'Tables and records']) {
+    expect(within(tree).queryByText(title)).not.toBeInTheDocument();
+  }
+});
+
+it('keeps a catalogue lesson branch when the user requested a child topic', async () => {
+  fetchTopics.mockResolvedValue([{ id: 'child', parentKey: 'concept:0', title: 'Browser requests',
+    objective: 'Explain browser requests', status: 'not_assessed', sessionId: null, citations: [] }]);
+  fetchHome.mockResolvedValue({ concepts: [{ id: '0', slug: 'clients-and-servers', title: 'Clients and servers',
+    status: 'not_assessed', sessionId: null, objectives: [], citations: [] }], recommendations: { learn: null, review: [] } });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={client}><MemoryRouter><CatalogueView /></MemoryRouter></QueryClientProvider>);
+  const tree = await screen.findByRole('region', { name: 'Skill tree' });
+  expect(within(tree).getByText('Clients and servers').closest('li')).toHaveTextContent('Browser requests');
+});
+
+it('shows saved lessons in their branches only after this user started them', async () => {
   fetchTopics.mockResolvedValue([
     { id: 'ci', parentKey: 'root:Software Development', title: 'CI/CD', objective: 'Understand the CI/CD workflow', status: 'not_assessed', sessionId: null, citations: [] },
     { id: 'deploy', parentKey: 'node:ci', title: 'Automated Deployment', objective: 'Explain automated deployment', status: 'explored', sessionId: '00000000-0000-4000-8000-000000000301', citations: [{ title: 'Deployment guide', url: 'https://example.com/deploy' }] },
@@ -34,19 +61,19 @@ it('shows one root, ten branches, and the four saved topics in their branches', 
   const tree = await screen.findByRole('region', { name: 'Skill tree' });
   expect(within(tree).getByText('You')).toBeVisible();
   expect(tree.querySelectorAll('.skill-branch')).toHaveLength(10);
-  expect(tree.querySelectorAll('.skill-hex svg')).toHaveLength(18);
+  expect(tree.querySelectorAll('.skill-hex svg')).toHaveLength(17);
   expect(tree.querySelectorAll('.skill-branches > .skill-branch')).toHaveLength(10);
   const networks = within(tree).getByRole('heading', { name: 'Computer Networks' }).closest('li');
-  expect(networks).toHaveTextContent('Clients and servers');
+  expect(networks).not.toHaveTextContent('Clients and servers');
   expect(networks).toHaveTextContent('HTTP requests and responses');
-  expect(networks?.querySelectorAll(':scope > .skill-tree-children > .skill-tree-item')).toHaveLength(2);
+  expect(networks?.querySelectorAll(':scope > .skill-tree-children > .skill-tree-item')).toHaveLength(1);
   expect(within(tree).getByRole('heading', { name: 'Software Development' }).closest('li')).toHaveTextContent('What an API does');
   const ci = within(tree).getByText('CI/CD').closest('li');
   expect(ci?.parentElement?.parentElement).toHaveClass('skill-branch');
   expect(ci?.querySelectorAll(':scope > .skill-tree-children > .skill-tree-item')).toHaveLength(2);
   expect(within(tree).getByRole('heading', { name: 'Databases and Data Engineering' }).closest('li')).toHaveTextContent('Tables and records');
   expect(within(tree).queryAllByRole('link')).toHaveLength(0);
-  expect([...tree.querySelectorAll('.skill-tree-children .skill-tree-children .skill-hex')].map(node => node.getAttribute('data-status'))).toEqual(['developing', 'not_assessed', 'explored', 'developing', 'demonstrated_understanding', 'not_assessed', 'explored']);
+  expect([...tree.querySelectorAll('.skill-tree-children .skill-tree-children .skill-hex')].map(node => node.getAttribute('data-status'))).toEqual(['developing', 'not_assessed', 'explored', 'developing', 'demonstrated_understanding', 'explored']);
   expect(tree.querySelectorAll('.skill-status-legend .skill-hex')).toHaveLength(4);
   expect(tree.querySelectorAll('.skill-branch > .skill-hex[data-status]')).toHaveLength(0);
 
@@ -110,11 +137,4 @@ it('shows one root, ten branches, and the four saved topics in their branches', 
   panel = screen.getByRole('complementary', { name: 'CI/CD' });
   expect(within(panel).getByRole('heading', { name: 'Citations' })).toBeVisible();
   expect(within(panel).getByRole('button', { name: 'Learn' })).toBeVisible();
-
-  fireEvent.click(within(tree).getByText('Clients and servers').closest('button')!);
-  panel = screen.getByRole('complementary', { name: 'Clients and servers' });
-  startLesson.mockResolvedValue({ id: '00000000-0000-4000-8000-000000000204' });
-  fireEvent.click(within(panel).getByRole('button', { name: 'Start lesson' }));
-  expect(await screen.findByText('Lesson opened')).toBeVisible();
-  expect(startLesson).toHaveBeenCalledWith('0', expect.any(String));
 });

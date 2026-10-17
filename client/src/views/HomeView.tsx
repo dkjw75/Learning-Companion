@@ -276,7 +276,8 @@ function SkillTree({ concepts, topics }: { concepts: ConceptChoice[]; topics: Sa
     <div className="skill-tree-canvas" ref={canvas} style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}>
       <div className="skill-tree-root skill-topic-node"><span className="skill-hex"><UserRound size={24} /></span><strong>You</strong></div>
       <ul className="skill-branches skill-tree-children">{skillBranches.map(branch => {
-        const lessons = branch.lessons.map(slug => concepts.find(concept => concept.slug === slug)).filter((concept): concept is ConceptChoice => Boolean(concept));
+        const lessons = branch.lessons.map(slug => concepts.find(concept => concept.slug === slug)).filter((concept): concept is ConceptChoice =>
+          Boolean(concept && (concept.sessionId || topics.some(topic => topic.parentKey === `concept:${concept.id}`))));
         return <li className="skill-branch skill-tree-item" key={branch.title}><div className="skill-topic-node"><span className="skill-hex"><branch.icon size={21} /></span><h2>{branch.title}</h2><TopicExpansionButton topic={branch.title} onOpen={trigger => openExpansion(`root:${branch.title}`, branch.title, trigger)} /></div>
           <TreeChildren parentKey={`root:${branch.title}`} topics={topics} concepts={lessons} selectedId={selectedId} onSelect={setSelectedId} onExpand={openExpansion} />
         </li>;

@@ -17,7 +17,8 @@ function connection(diagram: DiagramSpec, edge: DiagramSpec['edges'][number]) {
     x: middle, y: (y1 + y2) / 2, direction: from.x === to.x ? (to.y > from.y ? '↓' : '↑') : (to.x > from.x ? '→' : '←') };
 }
 
-export function LessonDiagram({ diagram, step, runningExample }: { diagram: DiagramSpec; step: LessonStep; runningExample: string }) {
+export function LessonDiagram({ diagram, step, runningExample, tutorHighlights }: { diagram: DiagramSpec; step: LessonStep; runningExample: string;
+  tutorHighlights?: { nodeIds: string[]; edgeIds: string[] } | undefined }) {
   const [selected, setSelected] = useState<string | null>(null);
   const markerId = useId().replace(/:/g, '');
   const selectedPart = diagram.nodes.find(part => part.id === selected) ?? diagram.edges.find(part => part.id === selected);
@@ -40,7 +41,7 @@ export function LessonDiagram({ diagram, step, runningExample }: { diagram: Diag
             <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
           </marker></defs>
           {diagram.edges.map(edge => {
-            return <path key={edge.id} data-edge-id={edge.id} className={step.highlightEdgeIds.includes(edge.id) ? 'highlight' : ''}
+            return <path key={edge.id} data-edge-id={edge.id} className={`${step.highlightEdgeIds.includes(edge.id) ? 'highlight' : ''} ${tutorHighlights?.edgeIds.includes(edge.id) ? 'tutor-highlight' : ''}`}
               d={connection(diagram, edge).path}
               markerEnd={`url(#${markerId})`} />;
           })}
@@ -49,7 +50,7 @@ export function LessonDiagram({ diagram, step, runningExample }: { diagram: Diag
           const Icon = icons[node.icon ?? 'generic'];
           const point = position(index);
           return <button type="button" key={node.id} style={{ left: point.x, top: point.y }}
-            className={`diagram-node tone-${index % 4} ${step.highlightNodeIds.includes(node.id) ? 'highlight' : 'inactive'} ${selected === node.id ? 'selected' : ''}`}
+            className={`diagram-node tone-${index % 4} ${step.highlightNodeIds.includes(node.id) ? 'highlight' : 'inactive'} ${tutorHighlights?.nodeIds.includes(node.id) ? 'tutor-highlight' : ''} ${selected === node.id ? 'selected' : ''}`}
             aria-label={`${node.label}: ${node.description}`} aria-pressed={selected === node.id} onClick={() => select(node.id)}>
             <span className="diagram-node-heading"><Icon size={22} strokeWidth={1.6} /><strong>{node.label}</strong></span>
             <span className="diagram-node-example">{node.example}</span>
@@ -60,7 +61,7 @@ export function LessonDiagram({ diagram, step, runningExample }: { diagram: Diag
           const line = connection(diagram, edge);
           return <button type="button" key={edge.id}
             style={{ left: line.x, top: line.y }}
-            className={`diagram-edge ${step.highlightEdgeIds.includes(edge.id) ? 'highlight' : 'inactive'} ${selected === edge.id ? 'selected' : ''}`}
+            className={`diagram-edge ${step.highlightEdgeIds.includes(edge.id) ? 'highlight' : 'inactive'} ${tutorHighlights?.edgeIds.includes(edge.id) ? 'tutor-highlight' : ''} ${selected === edge.id ? 'selected' : ''}`}
             aria-label={`${diagram.nodes.find(node => node.id === edge.from)?.label} to ${diagram.nodes.find(node => node.id === edge.to)?.label}: ${edge.label}`}
             aria-pressed={selected === edge.id} onClick={() => select(edge.id)}>{edge.label}<span aria-hidden="true">{line.direction}</span></button>;
         })}

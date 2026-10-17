@@ -1,4 +1,5 @@
-import { assessmentRoundSchema, errorEnvelopeSchema, hintResponseSchema, lessonSchema, submitAnswerResponseSchema, type SubmitAnswerResponse } from '@learning-companion/shared';
+import { assessmentRoundSchema, errorEnvelopeSchema, hintResponseSchema, lessonSchema, submitAnswerResponseSchema,
+  tutorHistorySchema, tutorReplySchema, type SubmitAnswerResponse, type TutorRequest } from '@learning-companion/shared';
 import { z } from 'zod';
 import { getSupabaseClient } from '@/auth/supabase';
 
@@ -34,6 +35,12 @@ export const startLesson = async (conceptId: string, requestId: string): Promise
   }, 140_000));
 export const fetchLesson = async (id: string): Promise<SavedLessonSession> =>
   savedSessionSchema.parse(await sessionRequest(`/sessions/${id}`));
+export const fetchTutorHistory = async (id: string, before?: number) =>
+  tutorHistorySchema.parse(await sessionRequest(`/sessions/${id}/messages${before === undefined ? '' : `?before=${before}`}`));
+export const sendTutorMessage = async (id: string, input: TutorRequest) =>
+  tutorReplySchema.parse(await sessionRequest(`/sessions/${id}/tutor`, {
+    method: 'POST', body: JSON.stringify(input),
+  }, 65_000));
 export const submitAnswer = async (roundId: string, questionId: string, answer: string, requestId: string): Promise<SubmitAnswerResponse> =>
   submitAnswerResponseSchema.parse(await sessionRequest(`/rounds/${roundId}/answers`, {
     method: 'POST', body: JSON.stringify({ questionId, answer, requestId }),

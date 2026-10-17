@@ -71,7 +71,8 @@ function placementOptions(parentKey: string, parentTitle: string, home: HomeData
   const options: { key: string; parentKey: string | null; title: string; objective?: string }[] =
     [{ key: parentKey, parentKey: null, title: parentTitle }];
   if (parentKey.startsWith('root:')) for (const concept of home.concepts) {
-    if (starterRoots[concept.slug] === parentTitle) options.push({ key: `concept:${concept.id}`, parentKey, title: concept.title });
+    if (starterRoots[concept.slug] === parentTitle && (concept.sessionId || existing.some(node => node.parentKey === `concept:${concept.id}`)))
+      options.push({ key: `concept:${concept.id}`, parentKey, title: concept.title });
   }
   const reachable = new Set(options.map(option => option.key));
   let added = true;

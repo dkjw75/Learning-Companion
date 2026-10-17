@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { learningStatusLabels } from '@learning-companion/shared';
 import { ButtonUi } from '@/components/ui/button-ui';
 import { LessonStepRail } from '@/components/LessonStepRail';
+import { TutorPanel } from '@/components/TutorPanel';
 import { fetchLesson, requestHint, saveLessonStep, submitAnswer, type SavedLessonSession } from '@/lib/sessions';
 
 export function QuizView() {
@@ -84,6 +85,7 @@ export function QuizView() {
       <p>Three questions · {data.round.assessmentBasis === 'ai_generated_key' ? 'AI-assessed' : 'Reviewed assessment'}
         {data.round.sourceMode === 'unverified' && ' · Unverified source'}</p></header>
     {stepError && <p role="alert" className="form-error">Could not open that lesson step. Please try again.</p>}
+    <div className="lesson-layout"><div className="lesson-main">
     {result && <section className="quiz-results" aria-labelledby="quiz-results-title" role="status">
       <h2 id="quiz-results-title">Check complete</h2>
       <p>Learning status: {learningStatusLabels[result.previousStatus]} → {learningStatusLabels[result.currentStatus]}</p>
@@ -127,5 +129,6 @@ export function QuizView() {
       </li>;
     })}</ol>
     <div className="quiz-end"><ButtonUi disabled={!result} onClick={() => navigate('/learn')}>End lesson</ButtonUi></div>
+    </div><TutorPanel sessionId={data.id} citations={data.citations} /></div>
   </article>;
 }

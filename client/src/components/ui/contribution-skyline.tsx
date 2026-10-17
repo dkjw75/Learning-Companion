@@ -32,7 +32,8 @@ export default function ContributionSkyline({ activityCounts, endDate }: Contrib
     for (; index >= 0 && days[index]!.count; index--) run++;
     return run;
   })();
-  const weeks = Array.from({ length: 53 }, (_, col) => days.slice(col * 7, col * 7 + 7));
+  const firstWeekday = (new Date(`${days[0]!.date}T00:00:00.000Z`).getUTCDay() + 6) % 7;
+  const weeks = Array.from({ length: 53 }, (_, col) => Array.from({ length: 7 }, (_, row) => days[col * 7 + row - firstWeekday]));
   const color = (n: number) => n === 0 ? '#17243a' : n === 1 ? '#064e3b' : n < 4 ? '#047857' : n < 7 ? '#10b981' : '#6ee7b7';
   const selected = active === null ? null : days[active];
   function handleKey(event: KeyboardEvent<SVGSVGElement>) {
@@ -46,8 +47,14 @@ export default function ContributionSkyline({ activityCounts, endDate }: Contrib
   return <section className="skyline-card" aria-label="Past-year contribution chart">
     <div className="skyline-chart">
       <svg viewBox="0 0 980 230" role="img" aria-label={`Showing ${total} lesson sessions over the past year`} onKeyDown={handleKey}>
+        <g aria-hidden="true" className="skyline-selected">
+          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((label, row) => <text key={row} x="12" y={48 + row * 19} textAnchor="middle">{label}</text>)}
+          {days.map((day, index) => index === 0 || day.date.endsWith('-01') ?
+            <text key={day.date} x={24 + Math.floor((index + firstWeekday) / 7) * 17} y="24">{new Date(`${day.date}T00:00:00.000Z`).toLocaleString('en', { month: 'short', timeZone: 'UTC' })}</text> : null)}
+        </g>
         {weeks.map((week, col) => week.map((day, row) => {
-          const index = col * 7 + row;
+          if (!day) return null;
+          const index = col * 7 + row - firstWeekday;
           const x = 24 + col * 17;
           const y = 35 + row * 19;
           const isActive = active === index;

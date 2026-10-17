@@ -174,12 +174,11 @@ Follow the project AGENTS.md rule: screens contain only implemented product func
 **Depends on:** Stages 6, 7, and 8.
 
 **Work:**
-
-- Add the original SVG mascot and four animation states.
-- Implement typed clarification using current step, bounded conversation context, and the selected lesson's saved reference passages, including Stage 13 lessons.
-- Validate returned highlights/citations, save conversations, and mark assessment assistance when applicable.
-- Add reduced-motion behaviour and tutor loading/error states.
-- Adapt any approved 21st.dev chat/input/loading components to the saved tutor-message API and shared design theme.
+- Implement a chatbox on the right side of lesson and quiz screen - first message from tutor should be "Ask or highlight a text to clarify anything here!"
+- Implement bounded conversation context, and the selected lesson's saved reference passages, including Stage 13 lessons.
+- Highlighting a part of the text on the lesson brings up a box with single field "Ask Tutor", when clicked, the chatbox will have the annotation. They can then add a prompt in their chatbox. 
+- Add tutor loading/error states.
+- User query will direct to Gemini, then return the response in the same chat box
 
 **Done when:** clarification highlights actual diagram parts, unsupported elaborations are labelled, saved messages survive resume, keys are not exposed in prompts, and reduced motion retains all functionality.
 
