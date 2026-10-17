@@ -4,12 +4,13 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it, vi } from 'vitest';
 import { CatalogueView } from './HomeView';
 
-const { fetchHome, startLesson } = vi.hoisted(() => ({ fetchHome: vi.fn(), startLesson: vi.fn() }));
-vi.mock('@/lib/learning', () => ({ fetchHome }));
+const { fetchHome, fetchTopics, startLesson } = vi.hoisted(() => ({ fetchHome: vi.fn(), fetchTopics: vi.fn(), startLesson: vi.fn() }));
+vi.mock('@/lib/learning', () => ({ fetchHome, fetchTopics }));
 vi.mock('@/lib/sessions', () => ({ startLesson }));
 vi.mock('@/auth/session-context', () => ({ useSession: () => ({ session: { userId: 'student' } }) }));
 
 it('shows one root, ten branches, and the four saved topics in their branches', async () => {
+  fetchTopics.mockResolvedValue([]);
   fetchHome.mockResolvedValue({ concepts: [
     ['clients-and-servers', 'Clients and servers', 'not_assessed'],
     ['http-requests-and-responses', 'HTTP requests and responses', 'explored'],

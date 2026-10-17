@@ -8,10 +8,12 @@ import { AiOperationError } from './ai.js';
 import type { GenerationService } from './generation.js';
 import { createAssessmentService, type AssessmentService } from './assessment.js';
 import { z } from 'zod';
+import type { TopicSuggestionService } from './topic-suggestions.js';
 
 export function createApp(profileService: ProfileService = createProfileService(),
   localRuns?: LocalRunsService, generationService?: GenerationService,
-  assessmentService: AssessmentService = createAssessmentService()) {
+  assessmentService: AssessmentService = createAssessmentService(),
+  topicSuggestionService?: TopicSuggestionService) {
   const app = express();
   app.disable('x-powered-by');
   app.use((_req, res, next) => {
@@ -67,6 +69,35 @@ export function createApp(profileService: ProfileService = createProfileService(
     const token = tokenFrom(req.get('Authorization'));
     if (!profileService.getHome) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not load your recommendations.');
     res.json({ data: (await profileService.getHome(token)).recommendations });
+  });
+  app.get('/api/topics', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const token = tokenFrom(req.get('Authorization'));
+    if (!topicSuggestionService) throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not load your topics.');
+    const profile = await profileService.getProfile(token);
+    try { res.json({ data: await topicSuggestionService.list(profile.userId) }); }
+    catch { throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not load your topics.'); }
+  });
+  app.post('/api/topics/suggestions', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const token = tokenFrom(req.get('Authorization'));
+    const parsed = z.strictObject({ parentKey: z.string().trim().min(6).max(160), requestId: z.uuid(),
+      prompt: z.string().trim().min(1).max(300).optional() }).safeParse(req.body);
+    if (!parsed.success) throw new ApiError(400, 'INVALID_INPUT', 'Choose a topic or enter what you want to learn.');
+    if (!profileService.getHome || !topicSuggestionService)
+      throw new ApiError(503, 'SERVICE_UNAVAILABLE', 'Could not suggest topics right now.');
+    const [profile, home] = await Promise.all([profileService.getProfile(token), profileService.getHome(token)]);
+    try {
+      res.json({ data: await topicSuggestionService.suggest(profile, home, parsed.data.parentKey,
+        parsed.data.requestId, parsed.data.prompt) });
+    } catch (error) {
+      if (!(error instanceof AiOperationError)) throw error;
+      const status = error.code === 'QUOTA' ? 429 : error.code === 'TIMEOUT' ? 504
+        : ['IDEMPOTENCY_CONFLICT', 'PENDING', 'PREVIOUS_FAILURE'].includes(error.code) ? 409 : 503;
+      throw new ApiError(status, status === 429 ? 'QUOTA_EXCEEDED' : status === 504 ? 'PROVIDER_TIMEOUT'
+        : status === 409 ? 'CONFLICT' : 'SERVICE_UNAVAILABLE',
+      status === 429 ? 'You have reached today’s suggestion limit.' : 'Could not suggest topics right now. Please try again.');
+    }
   });
   app.post('/api/sessions', async (req, res) => {
       res.setHeader('Cache-Control', 'no-store');

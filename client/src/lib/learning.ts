@@ -3,6 +3,7 @@ import { getSupabaseClient } from '@/auth/supabase';
 
 export type ConceptChoice = HomeData['concepts'][number];
 export type { HomeData };
+export type SavedTopicNode = { id: string; parentKey: string; title: string; objective: string };
 
 async function authorized<T>(path: string, init?: RequestInit): Promise<T> {
   const client = getSupabaseClient();
@@ -11,7 +12,7 @@ async function authorized<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', ...init?.headers },
-    signal: AbortSignal.timeout(10000),
+    signal: init?.signal ?? AbortSignal.timeout(10000),
   });
   if (!response.ok) throw new Error('Could not save or load your learning choices. Please try again.');
   const body = await response.json() as { data: T };
@@ -22,3 +23,7 @@ export const saveOnboarding = (input: CompleteOnboarding) => authorized<Profile>
   method: 'POST', body: JSON.stringify(input),
 });
 export const fetchHome = async () => homeEnvelopeSchema.parse({ data: await authorized<unknown>('/home') }).data;
+export const fetchTopics = () => authorized<SavedTopicNode[]>('/topics');
+export const suggestTopics = (parentKey: string, requestId: string, prompt?: string) => authorized<SavedTopicNode[]>('/topics/suggestions', {
+  method: 'POST', body: JSON.stringify({ parentKey, requestId, ...(prompt ? { prompt } : {}) }), signal: AbortSignal.timeout(65000),
+});
