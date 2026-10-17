@@ -13,6 +13,13 @@ describe('source discovery candidates', () => {
       {},
     ])).toEqual(['https://docs.example.com/topic']);
   });
+
+  it('omits rejected candidates while retaining fresh grounded links', () => {
+    expect(candidateUrls([
+      { web: { uri: 'https://docs.example.com/rejected' } },
+      { web: { uri: 'https://docs.example.com/fresh' } },
+    ], ['https://docs.example.com/rejected'])).toEqual(['https://docs.example.com/fresh']);
+  });
 });
 
 describe('automatic page checks', () => {

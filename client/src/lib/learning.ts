@@ -29,5 +29,5 @@ export const suggestTopics = (parentKey: string, requestId: string, prompt?: str
   method: 'POST', body: JSON.stringify({ parentKey, requestId, ...(prompt ? { prompt } : {}) }), signal: AbortSignal.timeout(65000),
 });
 export const discoverTopicSources = (nodeId: string) => authorized<{ urls: string[]; ready: boolean }>(`/topics/${nodeId}/discover`, {
-  method: 'POST', signal: AbortSignal.timeout(140000),
+  method: 'POST', signal: AbortSignal.timeout(310000),
 });

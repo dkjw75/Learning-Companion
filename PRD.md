@@ -4,7 +4,7 @@ Version 1.3 | 16 October 2026 | Product requirements | On-demand topic tree and 
 
 This document defines the product behaviour. The project name is a working name. Technical implementation decisions are specified separately in [technical-design.md](docs/technical-design.md).
 
-## 1. Problem, audience, and goal
+## 1. 4W framework
 
 ### Problem
 
