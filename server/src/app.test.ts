@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import { errorEnvelopeSchema, healthEnvelopeSchema, meEnvelopeSchema, type Profile } from '@learning-companion/shared';
-import { createApp } from './app.js';
+import { createApp } from './http-app.js';
 import { formatSgDateTime, safeSmokeRun } from './ai-runs.js';
 
 describe('foundation API', () => {

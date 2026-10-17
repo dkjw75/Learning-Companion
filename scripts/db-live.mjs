@@ -8,7 +8,7 @@ import pg from 'pg';
 process.loadEnvFile(resolve('.env'));
 const require = createRequire(import.meta.url);
 const request = require('supertest');
-const { createApp } = await import('../server/dist/app.js');
+const { createApp } = await import('../server/dist/http-app.js');
 const url = process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_PUBLISHABLE_KEY;
 const databaseUrl = process.env.DATABASE_URL;

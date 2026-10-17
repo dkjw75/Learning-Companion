@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
-import { createApp } from './app.js';
+import { createApp } from './http-app.js';
 import { createLocalRunsService } from './ai-runs.js';
 import { createGenerationService } from './generation.js';
 import { createTopicSuggestionService } from './topic-suggestions.js';

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
-import { createApp } from './app.js';
+import { createApp } from './http-app.js';
 
 describe('answer route', () => {
   it('requires a learner and passes only the selected option to grading', async () => {

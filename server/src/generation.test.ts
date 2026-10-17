@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 import type { Profile } from '@learning-companion/shared';
-import { createApp } from './app.js';
+import { createApp } from './http-app.js';
 import { generateValidated, validateGenerated, type GenerationInput, type GenerationService } from './generation.js';
 
 const conceptId = '00000000-0000-4000-8000-000000000101';

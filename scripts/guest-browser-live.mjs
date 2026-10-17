@@ -7,7 +7,7 @@ process.loadEnvFile(resolve('.env'));
 if (!process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
   throw new Error('Browser Supabase settings are required.');
 }
-const { createApp } = await import('../server/dist/app.js');
+const { createApp } = await import('../server/dist/http-app.js');
 const api = createApp().listen(3001, '127.0.0.1');
 const vite = spawn(process.execPath, [resolve('node_modules/vite/bin/vite.js'), '--port', '5174', '--strictPort'], {
   cwd: resolve('client'), env: { ...process.env, PORT: '3001' }, windowsHide: true, stdio: 'ignore',
