@@ -106,18 +106,14 @@ export function HomeView() {
   const recommended = data.concepts.find(item => item.id === data.recommendations.learn?.conceptId);
   const unfinished = data.unfinishedSession;
   const unfinishedTitle = data.concepts.find(item => item.id === unfinished?.conceptId)?.title ?? topics.data?.find(item => item.id === unfinished?.conceptId)?.title;
-  const savedTopics = topics.data?.filter(item => !item.sessionId).slice(0, 2) ?? [];
   const review = data.recommendations.review.map(item => ({ ...item, concept: data.concepts.find(concept => concept.id === item.conceptId) })).filter(item => item.concept);
   return <div className="home-view">
     <div className="page-intro"><span className="eyebrow"><Sparkles size={14} /> YOUR LEARNING SPACE</span><h1>Welcome back<span className="wave">✦</span></h1><p>Build connections, one concept at a time. Choose a path that feels right today.</p></div>
     <div className="home-grid">
-      <section className="feature-card learn-card" aria-labelledby="learn-heading"><div className="card-topline"><span className="pill cyan">{unfinished ? 'CONTINUE LEARNING' : 'LEARN SOMETHING NEW'}</span>{!unfinished && <span className="pill subdued">ABOUT 15 MIN</span>}</div>
+      <section className="feature-card learn-card" aria-labelledby="learn-heading"><div className="card-topline"><span className="pill cyan">{unfinished ? 'CONTINUE LEARNING' : 'LEARN SOMETHING NEW'}</span>{recommended && !unfinished && <span className="pill subdued">ABOUT 15 MIN</span>}</div>
         {unfinished ? <><h2 id="learn-heading">{unfinishedTitle ?? 'Continue your lesson'}</h2><p>Pick up where you left off.</p><div className="card-footer"><ButtonUiLink to={`/learn/${unfinished.id}`}>Continue lesson</ButtonUiLink></div></> :
           recommended ? <><h2 id="learn-heading">{recommended.title}</h2><p>{data.recommendations.learn?.reason}</p>{recommended.objectives[0] && <div className="home-topic-list"><div className="concept-row compact"><BookOpen size={20} aria-hidden="true" /><div><span className="concept-area">WHAT YOU'LL LEARN</span><h3>{recommended.objectives[0]}</h3></div></div></div>}<div className="card-footer"><LessonAction concept={recommended} /></div></> :
-          topics.isLoading ? <><h2 id="learn-heading">Your topics</h2><p role="status">Loading your topics…</p></> :
-          topics.isError ? <><h2 id="learn-heading">Your topics</h2><p role="alert">Could not load your topics.</p><div className="card-footer"><ButtonUi variant="outline" onClick={() => { void topics.refetch(); }}>Try again</ButtonUi></div></> :
-          savedTopics.length ? <><h2 id="learn-heading">Explore your topics</h2><p>Choose a topic you added to your learning tree.</p><div className="home-topic-list">{savedTopics.map(topic => <div className="home-topic-row" key={topic.id}><div><h3>{topic.title}</h3><p>{topic.objective}</p></div><SuggestedLessonAction topic={topic} /></div>)}</div></> :
-          <><h2 id="learn-heading">Choose a starting area</h2><p>Pick an area in your learning tree to discover a topic that interests you.</p><div className="card-footer"><ButtonUiLink to="/learn">Open learning tree</ButtonUiLink></div></>}
+          <><h2 id="learn-heading">Explore what interests you</h2><p>Choose an area in Learn to find a topic you want to explore.</p><div className="card-footer"><ButtonUiLink to="/learn">Go to Learn</ButtonUiLink></div></>}
       </section>
       <section className="feature-card review-card" aria-labelledby="review-heading"><div className="card-topline"><span className="pill violet">REVIEW</span><span className="pill subdued">YOUR PACE</span></div><h2 id="review-heading">Strengthen what you know</h2><p>Return to explored concepts and practise gaps when you are ready.</p>
         <div className="review-list">{review.length > 0 ? review.slice(0, 2).map(item => <ConceptCard concept={item.concept!} reason={item.reason} dueAt={item.dueAt} key={item.conceptId} />) : <div className="empty-review"><CircleHelp size={24} /><span>No concepts to review yet. Your explored topics will appear here.</span></div>}</div>

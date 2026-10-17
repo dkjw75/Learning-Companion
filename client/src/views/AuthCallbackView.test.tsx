@@ -20,6 +20,7 @@ it.each([false, true])('routes Google sign-in by verified onboarding state (%s)'
     getSession,
     getUser: vi.fn().mockResolvedValue({ data: { user: { id: profile.userId, is_anonymous: false } }, error: null }),
     exchangeCodeForSession,
+    onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
   } } as unknown as SupabaseClient;
   const destination = onboardingComplete ? 'Home destination' : 'Onboarding destination';
   render(<QueryClientProvider client={new QueryClient()}><SessionProvider client={client} loadProfile={vi.fn().mockResolvedValue(profile)}>

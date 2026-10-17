@@ -12,7 +12,7 @@ export const techInterestSchema = z.enum([
 export const profileSchema = z.strictObject({
   userId: entityIdSchema,
   isAnonymous: z.boolean(),
-  interests: z.array(techInterestSchema).max(3),
+  interests: z.array(techInterestSchema).max(10),
   experienceLevel: experienceLevelSchema,
   onboardingComplete: z.boolean(),
   timezone: z.string().min(1).max(100),
@@ -38,7 +38,7 @@ export const diagnosticEvidenceSchema = z.strictObject({
   }
 });
 export const completeOnboardingSchema = z.strictObject({
-  interests: z.array(techInterestSchema).max(3).refine(items => new Set(items).size === items.length),
+  interests: z.array(techInterestSchema).max(10).refine(items => new Set(items).size === items.length),
   experienceLevel: experienceLevelSchema,
   timezone: z.string().min(1).max(100),
   skippedDiagnostic: z.boolean(),

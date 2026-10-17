@@ -7,7 +7,7 @@ const migration = await readFile(new URL('../supabase/migrations/20261008000100_
 const questionGuard = await readFile(new URL('../supabase/migrations/20261009000100_public_question_guard.sql', import.meta.url), 'utf8');
 const onboardingMigration = await readFile(new URL('../supabase/migrations/20261009000200_onboarding.sql', import.meta.url), 'utf8');
 const broadInterestsMigration = await readFile(new URL('../supabase/migrations/20261009000300_broad_tech_interests.sql', import.meta.url), 'utf8');
-const operatingSystemsInterestMigration = await readFile(new URL('../supabase/migrations/20261017000100_operating_systems_interest.sql', import.meta.url), 'utf8');
+const starterInterestsMigration = await readFile(new URL('../supabase/migrations/20261017000500_starter_interests.sql', import.meta.url), 'utf8');
 const aiOperationsMigration = await readFile(new URL('../supabase/migrations/20261009000400_ai_operations.sql', import.meta.url), 'utf8');
 const assessmentPracticeMigration = await readFile(new URL('../supabase/migrations/20261016000300_assessment_practice.sql', import.meta.url), 'utf8');
 const assessmentResultsMigration = await readFile(new URL('../supabase/migrations/20261016000400_assessment_results.sql', import.meta.url), 'utf8');
@@ -38,7 +38,7 @@ async function createDatabase() {
   await pg.exec(aiOperationsMigration);
   await pg.exec(assessmentPracticeMigration);
   await pg.exec(assessmentResultsMigration);
-  await pg.exec(operatingSystemsInterestMigration);
+  await pg.exec(starterInterestsMigration);
   await pg.exec(seed);
   return pg;
 }

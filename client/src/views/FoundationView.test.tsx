@@ -20,9 +20,13 @@ describe('Student landing experience', () => {
     vi.stubGlobal('fetch', fetchMock);
     renderView();
     await screen.findByText('Sign-in is unavailable right now. Please try again later.');
+    expect(screen.getByRole('heading', { name: /Connect concepts.*Build understanding/ })).toBeVisible();
+    expect(screen.getByRole('img', { name: /choose a topic, learn through a visual lesson, then check and review/i })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Log in' })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Register' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeDisabled();
+    const googleButton = screen.getByRole('button', { name: 'Continue with Google' });
+    expect(googleButton).toBeDisabled();
+    expect(googleButton.querySelector('svg')).not.toBeNull();
     expect(screen.queryByText(/guest/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/project foundation|local connection|api connected|check connection|Supabase|later stages/i)).not.toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -33,6 +37,7 @@ describe('Student landing experience', () => {
     const client = { auth: {
       getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
       signInWithOAuth,
+      onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
     } } as unknown as SupabaseClient;
     renderView(client);
     const start = await screen.findByRole('button', { name: 'Continue with Google' });

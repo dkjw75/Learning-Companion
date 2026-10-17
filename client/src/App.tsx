@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link, NavLink, Navigate, Route, Routes, useLocation } from 'react-router';
-import { CircleUserRound } from 'lucide-react';
+import { CircleUserRound, LogOut } from 'lucide-react';
 import { FoundationView } from '@/views/FoundationView';
 import { OnboardingView } from '@/views/OnboardingView';
 import { CatalogueView, HomeView } from '@/views/HomeView';
@@ -10,22 +11,41 @@ import { LessonView } from '@/views/LessonView';
 import { QuizView } from '@/views/QuizView';
 import { AuthCallbackView } from '@/views/AuthCallbackView';
 
+function AccountActions({ displayName }: { displayName: string }) {
+  const { signOut } = useSession();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState(false);
+  async function leave() {
+    setPending(true);
+    setError(false);
+    try { await signOut(); }
+    catch { setError(true); }
+    finally { setPending(false); }
+  }
+  return <div className="account-actions">
+    <span className="profile-badge"><CircleUserRound size={19} /><span className="profile-name" title={displayName}>{displayName}</span></span>
+    <button type="button" className="sign-out-button" disabled={pending} onClick={() => { void leave(); }}><LogOut size={16} /> {pending ? 'Signing out…' : 'Sign out'}</button>
+    {error && <span className="account-error" role="alert">Could not sign out. Please try again.</span>}
+  </div>;
+}
+
 export function App() {
   const { session, profile, status } = useSession();
   const location = useLocation();
+  const landing = location.pathname === '/';
   const inProduct = Boolean(session && profile?.onboardingComplete && location.pathname !== '/');
   const gated = (view: React.ReactNode) => status === 'loading' ? <p role="status">Loading…</p> : !session || !profile ? <Navigate to="/" replace /> : !profile.onboardingComplete ? <Navigate to="/onboarding" replace /> : view;
   return <>
-    <BackgroundAsciiWake reducedMotion={profile?.reducedMotion ?? false} />
+    {!landing && <BackgroundAsciiWake reducedMotion={profile?.reducedMotion ?? false} />}
     <a className="skip-link" href="#main-content">Skip to content</a>
-    <header className="app-header">
+    {!landing && <header className="app-header">
       <nav className="header-inner" aria-label="Main navigation">
         <Link className="brand" to={inProduct ? '/home' : '/'}><img className="brand-mark" src="/logo.svg" alt="" /> LearningCompanion</Link>
         {inProduct && <div className="main-links"><NavLink to="/home">Home</NavLink><NavLink to="/learn">Learn</NavLink></div>}
-        {inProduct && <span className="profile-badge"><CircleUserRound size={19} /> My learning</span>}
+        {session && profile && <AccountActions displayName={session.displayName} />}
       </nav>
-    </header>
-    <main id="main-content" className="app-main" tabIndex={-1} data-reduced-motion={profile?.reducedMotion || undefined}>
+    </header>}
+    <main id="main-content" className={`app-main${landing ? ' landing-main' : ''}`} tabIndex={-1} data-reduced-motion={profile?.reducedMotion || undefined}>
       <Routes>
         <Route path="/" element={<FoundationView />} />
         <Route path="/auth/callback" element={<AuthCallbackView />} />

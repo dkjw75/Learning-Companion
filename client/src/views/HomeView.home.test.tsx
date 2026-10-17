@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { HomeView } from './HomeView';
@@ -53,24 +53,19 @@ it('starts the available recommended lesson directly', async () => {
   expect(startLesson).toHaveBeenCalledWith(concept.id, expect.any(String));
 });
 
-it('starts a saved topic when there is no catalogue recommendation', async () => {
+it('directs the learner to Learn when there is no recommendation, even with saved topics', async () => {
   fetchHome.mockResolvedValue(home);
   fetchTopics.mockResolvedValue([{ id: 'topic-1', parentKey: 'root:Computer Networks', title: 'Network basics',
     objective: 'Understand a network', status: 'not_assessed', sessionId: null, citations: [] }]);
-  discoverTopicSources.mockResolvedValue({ ready: true, urls: [] });
-  startLesson.mockResolvedValue({ id: 'topic-session' });
   showHome();
-  const card = await screen.findByRole('region', { name: 'Explore your topics' });
-  fireEvent.click(within(card).getByRole('button', { name: 'Learn' }));
-  await waitFor(() => expect(screen.getByText('Lesson opened')).toBeVisible());
-  expect(discoverTopicSources).toHaveBeenCalledWith('topic-1');
-  expect(startLesson).toHaveBeenCalledWith('topic-1', expect.any(String));
+  expect(await screen.findByRole('heading', { name: 'Explore what interests you' })).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Go to Learn' })).toHaveAttribute('href', '/learn');
 });
 
 it('offers the learning tree when no lesson or saved topic is available', async () => {
   fetchHome.mockResolvedValue({ ...home, concepts: [] });
   showHome();
-  expect(await screen.findByRole('heading', { name: 'Choose a starting area' })).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Open learning tree' })).toHaveAttribute('href', '/learn');
+  expect(await screen.findByRole('heading', { name: 'Explore what interests you' })).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Go to Learn' })).toHaveAttribute('href', '/learn');
   expect(screen.queryByText('Browse the learning path')).not.toBeInTheDocument();
 });

@@ -5,7 +5,7 @@ import type { Profile } from '@learning-companion/shared';
 import { fetchProfile, getSupabaseClient } from './supabase.js';
 
 // Identity snapshot only. Access tokens remain in the Supabase client, never Context.
-export type SessionIdentity = { userId: string; isAnonymous: boolean };
+export type SessionIdentity = { userId: string; isAnonymous: boolean; displayName: string };
 type SessionContextValue = {
   session: SessionIdentity | null;
   profile: Profile | null;
@@ -13,6 +13,7 @@ type SessionContextValue = {
   refreshProfile: () => Promise<Profile>;
   signInWithGoogle: () => Promise<void>;
   finishGoogleSignIn: (code: string) => Promise<Profile>;
+  signOut: () => Promise<void>;
   replaceSession: (session: SessionIdentity | null) => void;
 };
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -34,8 +35,8 @@ export function SessionProvider({ children, client = getSupabaseClient(), loadPr
     setSession(nextSession);
     setProfile(null);
   }, [queryClient]);
-  const applyVerifiedProfile = useCallback((verified: Profile) => {
-    replaceSession({ userId: verified.userId, isAnonymous: verified.isAnonymous });
+  const applyVerifiedProfile = useCallback((verified: Profile, displayName: string) => {
+    replaceSession({ userId: verified.userId, isAnonymous: verified.isAnonymous, displayName });
     setProfile(verified);
   }, [replaceSession]);
   const verifyStoredSession = useCallback(async (accessToken: string) => {
@@ -46,7 +47,9 @@ export function SessionProvider({ children, client = getSupabaseClient(), loadPr
     if (verified.userId !== user.id || verified.isAnonymous) {
       throw new Error('Profile and session identities do not match.');
     }
-    applyVerifiedProfile(verified);
+    const name = [user.user_metadata?.full_name, user.user_metadata?.name]
+      .find((value): value is string => typeof value === 'string' && value.trim().length > 0);
+    applyVerifiedProfile(verified, name?.trim().replace(/\s+/g, ' ').slice(0, 80) || 'My learning');
     return verified;
   }, [applyVerifiedProfile, client, loadProfile]);
   useEffect(() => {
@@ -74,6 +77,13 @@ export function SessionProvider({ children, client = getSupabaseClient(), loadPr
     })();
     return () => { active = false; };
   }, [client, replaceSession, verifyStoredSession]);
+  useEffect(() => {
+    if (!client) return;
+    const { data: { subscription } } = client.auth.onAuthStateChange(event => {
+      if (event === 'SIGNED_OUT') replaceSession(null);
+    });
+    return () => subscription.unsubscribe();
+  }, [client, replaceSession]);
   const refreshProfile = useCallback(async () => {
     if (!client) throw new Error('No account session.');
     const { data: { session: stored } } = await client.auth.getSession();
@@ -93,8 +103,14 @@ export function SessionProvider({ children, client = getSupabaseClient(), loadPr
     if (error || !data.session) throw error ?? new Error('Sign-in could not be completed.');
     return verifyStoredSession(data.session.access_token);
   }, [client, verifyStoredSession]);
-  const value = useMemo(() => ({ session, profile, status, refreshProfile, signInWithGoogle, finishGoogleSignIn, replaceSession }),
-    [session, profile, status, refreshProfile, signInWithGoogle, finishGoogleSignIn, replaceSession]);
+  const signOut = useCallback(async () => {
+    if (!client) throw new Error('Sign-out is unavailable.');
+    const { error } = await client.auth.signOut({ scope: 'local' });
+    if (error) throw error;
+    replaceSession(null);
+  }, [client, replaceSession]);
+  const value = useMemo(() => ({ session, profile, status, refreshProfile, signInWithGoogle, finishGoogleSignIn, signOut, replaceSession }),
+    [session, profile, status, refreshProfile, signInWithGoogle, finishGoogleSignIn, signOut, replaceSession]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 

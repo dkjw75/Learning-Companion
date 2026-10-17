@@ -9,7 +9,7 @@ import { OnboardingView } from './OnboardingView';
 vi.mock('@/auth/session-context', () => ({ useSession: vi.fn() }));
 vi.mock('@/lib/learning', () => ({ saveOnboarding: vi.fn() }));
 
-it('shows the ten starter areas and saves the chosen first area first', async () => {
+it('saves all ten starter areas and reaches home after interests and experience', async () => {
   vi.mocked(useSession).mockReturnValue({
     session: { userId: 'account', isAnonymous: false },
     profile: { onboardingComplete: false },
@@ -27,17 +27,14 @@ it('shows the ten starter areas and saves the chosen first area first', async ()
     'Operating Systems', 'Hardware and Embedded Systems', 'Human-Computer Interaction',
   ]);
   const user = userEvent.setup();
-  await user.click(choices.getByRole('button', { name: /Software Development/ }));
-  await user.click(choices.getByRole('button', { name: /Databases and Data Engineering/ }));
-  await user.click(choices.getByRole('button', { name: /Computer Networks/ }));
+  for (const choice of choices.getAllByRole('button')) await user.click(choice);
   await user.click(screen.getByRole('button', { name: 'Continue' }));
   await user.click(screen.getByRole('radio', { name: /Some experience/ }));
-  await user.click(screen.getByRole('button', { name: 'Continue' }));
-  await user.click(screen.getByRole('radio', { name: /Databases and Data Engineering/ }));
   await user.click(screen.getByRole('button', { name: 'See my home' }));
   expect(await screen.findByText('Home destination')).toBeVisible();
   expect(saveOnboarding).toHaveBeenCalledWith(expect.objectContaining({
-    interests: ['databases', 'web_development', 'web_communication'],
+    interests: ['web_development', 'ai_ml', 'cybersecurity', 'cloud', 'data_science',
+      'databases', 'web_communication', 'operating_systems', 'hardware_iot', 'ui_ux'],
     experienceLevel: 'some', skippedDiagnostic: true, answers: [],
   }));
 });

@@ -15,4 +15,5 @@ it('prioritizes the first selected interest over catalogue order', () => {
       area: 'databases', order: 2, contentAvailable: true, sessionId: null, sessionCompleted: false, status: 'not_assessed' },
   ];
   expect(recommend(concepts, profile, [], [], new Map()).learn?.conceptId).toBe('database');
+  expect(recommend(concepts, { ...profile, interests: ['cybersecurity', 'operating_systems', 'ui_ux'] }, [], [], new Map()).learn).toBeNull();
 });

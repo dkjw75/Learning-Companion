@@ -11,10 +11,7 @@ export type ProfileService = {
 const dayMs = 24 * 60 * 60 * 1000;
 const relatedAreas: Partial<Record<Profile['interests'][number], string[]>> = {
   web_communication: ['web_communication'], apis: ['apis'], databases: ['databases'],
-  web_development: ['web_communication', 'apis'], cloud: ['web_communication', 'apis'],
-  cybersecurity: ['web_communication', 'apis'], mobile: ['apis', 'web_communication'],
-  game_development: ['apis', 'web_communication'], devops: ['web_communication', 'apis', 'databases'],
-  ai_ml: ['apis', 'databases'], data_science: ['databases', 'apis'], ui_ux: ['web_communication'],
+  web_development: ['apis'],
 };
 
 export function recommend(concepts: HomeData['concepts'], profile: Profile,
@@ -28,17 +25,13 @@ export function recommend(concepts: HomeData['concepts'], profile: Profile,
     (relatedAreas[interest] ?? []).includes(concept.area))).find(Boolean);
   const missingPrerequisite = preferred && availableNew.find(concept => edges.some(edge =>
     edge.from_concept_id === concept.id && edge.to_concept_id === preferred.id && status(concept.id) !== 'demonstrated_understanding'));
-  const learnConcept = missingPrerequisite ?? preferred ?? availableNew.find(concept => !edges.some(edge =>
-    edge.to_concept_id === concept.id && status(edge.from_concept_id) !== 'demonstrated_understanding')) ?? availableNew[0] ?? null;
+  const learnConcept = missingPrerequisite ?? preferred ?? null;
   const learn: Recommendations['learn'] = !learnConcept ? null : missingPrerequisite ? {
     conceptId: learnConcept.id, reasonCode: 'prerequisite',
     reason: `Start here first; it prepares you for ${preferred?.title}. You can still choose another topic.`,
-  } : preferred ? {
+  } : {
     conceptId: learnConcept.id, reasonCode: 'interest',
     reason: 'This available lesson connects with the interests you selected. You can still choose another topic.',
-  } : {
-    conceptId: learnConcept.id, reasonCode: 'next_available',
-    reason: 'This is the next available foundation in your learning path. You can still choose another topic.',
   };
 
   const now = Date.now();
