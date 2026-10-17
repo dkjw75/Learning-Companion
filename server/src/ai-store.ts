@@ -24,8 +24,8 @@ export async function reserveCall(db: PoolClient, ownerId: string, isAnonymous: 
   const day = (await db.query<{ day: string }>("select (now() at time zone 'Asia/Singapore')::date::text as day")).rows[0]?.day;
   if (!day) throw new AiOperationError('PROVIDER_FAILURE', 'Could not determine quota day.');
   const limits = new Map<string, number>([
-    ['deployment', limit('AI_DEPLOYMENT_DAILY_LIMIT', 300)],
-    [`owner:${ownerId}`, limit(isAnonymous ? 'AI_GUEST_DAILY_LIMIT' : 'AI_USER_DAILY_LIMIT', isAnonymous ? 20 : 60)],
+    ['deployment', limit('AI_DEPLOYMENT_DAILY_LIMIT', 1000)],
+    [`owner:${ownerId}`, limit(isAnonymous ? 'AI_GUEST_DAILY_LIMIT' : 'AI_USER_DAILY_LIMIT', 200)],
   ]);
   for (const [scopeKey, max] of limits) {
     await db.query(`insert into app_private.ai_usage_days(day,scope_key,call_count) values($1,$2,0) on conflict do nothing`, [day, scopeKey]);
