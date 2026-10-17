@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
+import express from 'express';
 import { createApp } from './http-app.js';
 import { createLocalRunsService } from './ai-runs.js';
 import { createGenerationService } from './generation.js';
@@ -16,7 +17,7 @@ const localRuns = process.env.NODE_ENV === 'production' || !process.env.DATABASE
 const generation = process.env.DATABASE_URL?.trim() ? createGenerationService(process.env.DATABASE_URL.trim()) : undefined;
 const tutor = process.env.DATABASE_URL?.trim() ? createTutorService(process.env.DATABASE_URL.trim()) : undefined;
 const suggestions = createTopicSuggestionService();
-const app = createApp(undefined, localRuns, generation, undefined, suggestions, tutor);
+const app = express().use(createApp(undefined, localRuns, generation, undefined, suggestions, tutor));
 export default app;
 
 if (!process.env.VERCEL) {
