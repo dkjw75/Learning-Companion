@@ -37,7 +37,7 @@ These are intended benefits to validate with students, rather than established l
 
 The first release starts with four broad, fixed roots: **Software Development**, **AI Engineering**, **Cybersecurity**, and **Cloud Computing**. The existing 12 web, API, and database concepts remain available as catalogue material; the four already source-backed lessons remain usable. They are not a requirement to hand-author every branch before students can explore the tree.
 
-Opening a root expands it into exactly three student-specific subtopics on request. A student can choose a subtopic to learn or request three deeper subtopics. Save each expansion so reopening it returns the same children. Each lesson targets one focused objective and roughly 15 minutes of learning. A student can stop expanding at any depth.
+Requesting topics produces exactly three student-specific topics, each placed within the selected subtree under a logical parent. A student can choose one to learn or request more topics within its subtree. Save each trio so retries return those same topics; a new deliberate request may add another trio. Each lesson targets one focused objective and roughly 15 minutes of learning. A student can stop expanding at any depth.
 
 When a student chooses an uncached lesson, Gemini discovers candidate public references; the backend checks and extracts permitted pages, chunks relevant text, and asks Gemini to generate the lesson from those saved passages. Show the actual citations. If suitable references cannot be obtained, show a retry or let the student choose another node; do not invent a successful sourced lesson. No separate badge is needed merely to say a page was found by Gemini. Do not represent automatically found material as independently approved.
 
@@ -93,10 +93,10 @@ Topic-tree selection -> recall questions -> targeted explanations and diagrams f
 
 ### 3.5 Topic tree
 
-Choose a broad root -> generate and save three child topics -> select a child to learn or expand it further -> return to the same saved tree and learning history.
+Choose a broad root -> generate and save three topics within that subtree -> select a topic to learn or expand it further -> return to the same saved tree and learning history.
 
 - The topic tree is the sole place to browse, expand, and select learning topics; there is no separate Explore or knowledge-map screen.
-- Repeated or concurrent expansion requests return the saved children. Reject duplicate or near-duplicate suggestions against existing accessible nodes before saving.
+- Repeated or concurrent copies of one expansion request return the saved trio. Reject duplicate or near-duplicate suggestions and invalid parent links before saving. Show siblings side by side and children below their parent.
 - Selecting a node with an existing lesson reuses it. A new lesson begins only after adequate reference passages have been saved.
 - Show actual learning status, assessed objectives, source links, related lessons, and Learn/Review actions on each relevant node.
 

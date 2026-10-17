@@ -1,16 +1,20 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it, vi } from 'vitest';
 import { CatalogueView } from './HomeView';
 
-const { fetchHome, fetchTopics, startLesson } = vi.hoisted(() => ({ fetchHome: vi.fn(), fetchTopics: vi.fn(), startLesson: vi.fn() }));
-vi.mock('@/lib/learning', () => ({ fetchHome, fetchTopics }));
+const { fetchHome, fetchTopics, suggestTopics, startLesson } = vi.hoisted(() => ({ fetchHome: vi.fn(), fetchTopics: vi.fn(), suggestTopics: vi.fn(), startLesson: vi.fn() }));
+vi.mock('@/lib/learning', () => ({ fetchHome, fetchTopics, suggestTopics }));
 vi.mock('@/lib/sessions', () => ({ startLesson }));
 vi.mock('@/auth/session-context', () => ({ useSession: () => ({ session: { userId: 'student' } }) }));
 
 it('shows one root, ten branches, and the four saved topics in their branches', async () => {
-  fetchTopics.mockResolvedValue([]);
+  fetchTopics.mockResolvedValue([
+    { id: 'ci', parentKey: 'root:Software Development', title: 'CI/CD', objective: 'Understand the CI/CD workflow' },
+    { id: 'deploy', parentKey: 'node:ci', title: 'Automated Deployment', objective: 'Explain automated deployment' },
+    { id: 'pipeline', parentKey: 'node:ci', title: 'Building a CI Pipeline', objective: 'Build a continuous integration pipeline' },
+  ]);
   fetchHome.mockResolvedValue({ concepts: [
     ['clients-and-servers', 'Clients and servers', 'not_assessed'],
     ['http-requests-and-responses', 'HTTP requests and responses', 'explored'],
@@ -30,16 +34,19 @@ it('shows one root, ten branches, and the four saved topics in their branches', 
   const tree = await screen.findByRole('region', { name: 'Skill tree' });
   expect(within(tree).getByText('You')).toBeVisible();
   expect(tree.querySelectorAll('.skill-branch')).toHaveLength(10);
-  expect(tree.querySelectorAll('.skill-hex svg')).toHaveLength(15);
-  expect((tree.querySelectorAll('.skill-branch')[0] as HTMLElement).style.left).toBe('210px');
-  expect((tree.querySelectorAll('.skill-branch')[9] as HTMLElement).style.left).toBe('2190px');
+  expect(tree.querySelectorAll('.skill-hex svg')).toHaveLength(18);
+  expect(tree.querySelectorAll('.skill-branches > .skill-branch')).toHaveLength(10);
   const networks = within(tree).getByRole('heading', { name: 'Computer Networks' }).closest('li');
   expect(networks).toHaveTextContent('Clients and servers');
   expect(networks).toHaveTextContent('HTTP requests and responses');
+  expect(networks?.querySelectorAll(':scope > .skill-tree-children > .skill-tree-item')).toHaveLength(2);
   expect(within(tree).getByRole('heading', { name: 'Software Development' }).closest('li')).toHaveTextContent('What an API does');
+  const ci = within(tree).getByText('CI/CD').closest('li');
+  expect(ci?.parentElement?.parentElement).toHaveClass('skill-branch');
+  expect(ci?.querySelectorAll(':scope > .skill-tree-children > .skill-tree-item')).toHaveLength(2);
   expect(within(tree).getByRole('heading', { name: 'Databases and Data Engineering' }).closest('li')).toHaveTextContent('Tables and records');
   expect(within(tree).queryAllByRole('link')).toHaveLength(0);
-  expect([...tree.querySelectorAll('.skill-leaves .skill-hex')].map(node => node.getAttribute('data-status'))).toEqual(['developing', 'demonstrated_understanding', 'not_assessed', 'explored']);
+  expect([...tree.querySelectorAll('.skill-tree-children .skill-tree-children .skill-hex')].map(node => node.getAttribute('data-status'))).toEqual(['developing', 'not_assessed', 'not_assessed', 'not_assessed', 'demonstrated_understanding', 'not_assessed', 'explored']);
   expect(tree.querySelectorAll('.skill-status-legend .skill-hex')).toHaveLength(4);
   expect(tree.querySelectorAll('.skill-branch > .skill-hex[data-status]')).toHaveLength(0);
 
@@ -51,8 +58,19 @@ it('shows one root, ten branches, and the four saved topics in their branches', 
   expect(within(expansionDialog).getByRole('textbox', { name: 'Topic' })).toBeVisible();
   expect(within(expansionDialog).getByRole('link', { name: 'Got nothing in mind? Let me suggest for you' })).toHaveAttribute('href', '#suggest');
   expect(within(expansionDialog).getByRole('button', { name: 'Submit' })).toBeVisible();
-  fireEvent.click(within(expansionDialog).getByRole('button', { name: 'Close' }));
-  expect(screen.queryByRole('dialog', { name: 'What do you want to learn?' })).not.toBeInTheDocument();
+  let finishSuggestion!: (topics: unknown[]) => void;
+  suggestTopics.mockReturnValueOnce(new Promise(resolve => { finishSuggestion = resolve; }));
+  tree.setPointerCapture = vi.fn();
+  const suggestLink = within(expansionDialog).getByRole('link', { name: 'Got nothing in mind? Let me suggest for you' });
+  fireEvent.pointerDown(suggestLink, { button: 0, pointerId: 2 });
+  expect(tree.setPointerCapture).not.toHaveBeenCalled();
+  fireEvent.click(suggestLink);
+  expect(expansionDialog).toHaveAttribute('aria-busy', 'true');
+  expect(expansionDialog.querySelector('form')).toHaveAttribute('inert');
+  expect(within(expansionDialog).getByRole('status')).toHaveTextContent('Finding topics…');
+  expect(within(expansionDialog).getByRole('button', { name: 'Close' })).toBeDisabled();
+  await act(async () => { finishSuggestion([]); });
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'What do you want to learn?' })).not.toBeInTheDocument());
 
   const canvas = tree.querySelector('.skill-tree-canvas') as HTMLElement;
   fireEvent.click(within(tree).getByRole('button', { name: 'Zoom in' }));
