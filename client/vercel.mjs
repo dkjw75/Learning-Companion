@@ -5,6 +5,7 @@ if (!apiUrl || apiUrl.protocol !== 'https:' || apiUrl.pathname !== '/' || apiUrl
 }
 
 export const config = {
+  installCommand: 'npm --prefix .. ci --include=dev',
   buildCommand: 'npm --prefix .. run build -w @learning-companion/shared && npm run build',
   outputDirectory: 'dist',
   rewrites: [

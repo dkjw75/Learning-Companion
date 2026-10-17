@@ -40,7 +40,7 @@ The browser suite runs desktop and mobile Chromium checks, reusing an existing l
 
 ## Vercel preview deployment
 
-Create two Vercel projects from this repository. Set the **Root Directory** to `server` for the API project and `client` for the frontend project. In both projects, enable **Include source files outside of the Root Directory in the Build Step** so the npm workspaces and `shared/` are available. Use Node.js 24.x. The project config files supply the build commands; leave the install command at Vercel's npm default.
+Create two Vercel projects from this repository. Set the **Root Directory** to `server` for the API project and `client` for the frontend project. In both projects, enable **Include source files outside of the Root Directory in the Build Step** so the npm workspaces and `shared/` are available. Use Node.js 24.x. The project config files install dependencies from the repository root and supply the build commands.
 
 Deploy the API project first. Set its Preview environment variables to `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `DATABASE_URL`, `GEMINI_API_KEY`, and `GEMINI_MODEL`. `GEMINI_SEARCH_MODEL` and the `AI_*_DAILY_LIMIT` values are optional overrides. Enter server-only values in Vercel settings, never in a `VITE_` variable. Check `https://<api-project>.vercel.app/api/health` after deployment; this checks routing, not database or provider readiness.
 
