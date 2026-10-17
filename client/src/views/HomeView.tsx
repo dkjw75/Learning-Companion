@@ -75,6 +75,7 @@ function SuggestedLessonAction({ topic }: { topic: SavedTopicNode }) {
       setPhase('lesson');
       const saved = await startLesson(topic.id, crypto.randomUUID());
       void queryClient.invalidateQueries({ queryKey: ['topics'] });
+      void queryClient.invalidateQueries({ queryKey: ['home'] });
       navigate(`/learn/${saved.id}`);
     }
     catch { setError(true); }
@@ -91,26 +92,35 @@ function ActivityPanel({ data }: { data: HomeData }) {
     <div className="activity-chart-section"><ContributionSkyline activityCounts={data.activityCounts} /></div>
   </section>;
 }
-function ConceptCard({ concept, reason, dueAt, compact = false }: { concept: ConceptChoice; reason?: string; dueAt?: string | null; compact?: boolean }) {
-  return <div className={`concept-row ${compact ? 'compact' : ''}`}><div className="concept-icon"><Network size={20} /></div><div><span className="concept-area">{areaNames[concept.area]}</span><h3>{concept.title}</h3><span className="status-text">{reason ?? learningStatusLabels[concept.status as keyof typeof learningStatusLabels] ?? 'Not assessed'}{dueAt ? ` Suggested review date: ${new Date(dueAt).toLocaleDateString()}.` : ''}</span></div></div>;
+function ConceptCard({ concept, reason, dueAt }: { concept: ConceptChoice; reason?: string; dueAt?: string | null }) {
+  return <div className="concept-row compact"><div className="concept-icon"><Network size={20} /></div><div><span className="concept-area">{areaNames[concept.area]}</span><h3>{concept.title}</h3><span className="status-text">{reason ?? learningStatusLabels[concept.status as keyof typeof learningStatusLabels] ?? 'Not assessed'}{dueAt ? ` Suggested review date: ${new Date(dueAt).toLocaleDateString()}.` : ''}</span></div>
+    {concept.sessionId && <ButtonUiLink variant="outline" size="small" to={`/learn/${concept.sessionId}`} aria-label={`Review ${concept.title}`}>Review lesson</ButtonUiLink>}
+  </div>;
 }
 export function HomeView() {
-  const { profile } = useSession();
+  const { profile, session } = useSession();
   const { data, isLoading, isError, refetch } = useHomeData();
+  const topics = useQuery({ queryKey: ['topics', session?.userId], queryFn: fetchTopics, enabled: Boolean(session) });
   if (isLoading) return <p className="load-state" role="status">Loading your home…</p>;
   if (isError || !data) return <div className="load-state" role="alert">Could not load your home. <ButtonUi variant="quiet" size="small" onClick={() => { void refetch(); }}>Try again</ButtonUi></div>;
   const recommended = data.concepts.find(item => item.id === data.recommendations.learn?.conceptId);
+  const unfinished = data.unfinishedSession;
+  const unfinishedTitle = data.concepts.find(item => item.id === unfinished?.conceptId)?.title ?? topics.data?.find(item => item.id === unfinished?.conceptId)?.title;
+  const savedTopics = topics.data?.filter(item => !item.sessionId).slice(0, 2) ?? [];
   const review = data.recommendations.review.map(item => ({ ...item, concept: data.concepts.find(concept => concept.id === item.conceptId) })).filter(item => item.concept);
   return <div className="home-view">
     <div className="page-intro"><span className="eyebrow"><Sparkles size={14} /> YOUR LEARNING SPACE</span><h1>Welcome back<span className="wave">✦</span></h1><p>Build connections, one concept at a time. Choose a path that feels right today.</p></div>
     <div className="home-grid">
-      <section className="feature-card learn-card" aria-labelledby="learn-heading"><div className="card-topline"><span className="pill cyan">LEARN SOMETHING NEW</span><span className="pill subdued">ABOUT 15 MIN</span></div><h2 id="learn-heading">{recommended?.title ?? 'Choose a topic'}</h2><p>{data.recommendations.learn?.reason ?? 'Explore an available topic from the skill tree.'}</p>
-        {recommended && <div className="mini-diagram" aria-hidden="true"><span><BookOpen size={22} /> Start here</span><i /><span><Network size={22} /> Connect ideas</span><i /><span><BrainCircuit size={22} /> Check understanding</span></div>}
-        <div className="card-footer"><ButtonUiLink to="/learn">Browse topics</ButtonUiLink><span className="small-note">{recommended?.contentAvailable ? 'Lesson available' : 'Browse the learning path'}</span></div>
+      <section className="feature-card learn-card" aria-labelledby="learn-heading"><div className="card-topline"><span className="pill cyan">{unfinished ? 'CONTINUE LEARNING' : 'LEARN SOMETHING NEW'}</span>{!unfinished && <span className="pill subdued">ABOUT 15 MIN</span>}</div>
+        {unfinished ? <><h2 id="learn-heading">{unfinishedTitle ?? 'Continue your lesson'}</h2><p>Pick up where you left off.</p><div className="card-footer"><ButtonUiLink to={`/learn/${unfinished.id}`}>Continue lesson</ButtonUiLink></div></> :
+          recommended ? <><h2 id="learn-heading">{recommended.title}</h2><p>{data.recommendations.learn?.reason}</p>{recommended.objectives[0] && <div className="home-topic-list"><div className="concept-row compact"><BookOpen size={20} aria-hidden="true" /><div><span className="concept-area">WHAT YOU'LL LEARN</span><h3>{recommended.objectives[0]}</h3></div></div></div>}<div className="card-footer"><LessonAction concept={recommended} /></div></> :
+          topics.isLoading ? <><h2 id="learn-heading">Your topics</h2><p role="status">Loading your topics…</p></> :
+          topics.isError ? <><h2 id="learn-heading">Your topics</h2><p role="alert">Could not load your topics.</p><div className="card-footer"><ButtonUi variant="outline" onClick={() => { void topics.refetch(); }}>Try again</ButtonUi></div></> :
+          savedTopics.length ? <><h2 id="learn-heading">Explore your topics</h2><p>Choose a topic you added to your learning tree.</p><div className="home-topic-list">{savedTopics.map(topic => <div className="home-topic-row" key={topic.id}><div><h3>{topic.title}</h3><p>{topic.objective}</p></div><SuggestedLessonAction topic={topic} /></div>)}</div></> :
+          <><h2 id="learn-heading">Choose a starting area</h2><p>Pick an area in your learning tree to discover a topic that interests you.</p><div className="card-footer"><ButtonUiLink to="/learn">Open learning tree</ButtonUiLink></div></>}
       </section>
       <section className="feature-card review-card" aria-labelledby="review-heading"><div className="card-topline"><span className="pill violet">REVIEW</span><span className="pill subdued">YOUR PACE</span></div><h2 id="review-heading">Strengthen what you know</h2><p>Return to explored concepts and practise gaps when you are ready.</p>
-        <div className="review-list">{review.length > 0 ? review.slice(0, 2).map(item => <ConceptCard concept={item.concept!} reason={item.reason} dueAt={item.dueAt} compact key={item.conceptId} />) : <div className="empty-review"><CircleHelp size={24} /><span>No concepts to review yet. Your explored topics will appear here.</span></div>}</div>
-        <div className="card-footer"><ButtonUiLink variant="outline" to="/learn">Choose a concept</ButtonUiLink></div>
+        <div className="review-list">{review.length > 0 ? review.slice(0, 2).map(item => <ConceptCard concept={item.concept!} reason={item.reason} dueAt={item.dueAt} key={item.conceptId} />) : <div className="empty-review"><CircleHelp size={24} /><span>No concepts to review yet. Your explored topics will appear here.</span></div>}</div>
       </section>
     </div>
     <ActivityPanel data={data} />

@@ -82,6 +82,7 @@ export const homeSchema = z.strictObject({
     id: entityIdSchema, conceptId: entityIdSchema,
     createdAt: z.iso.datetime({ offset: true }), completed: z.boolean(),
   }).nullable(),
+  unfinishedSession: z.strictObject({ id: entityIdSchema, conceptId: entityIdSchema }).nullable(),
 });
 export const homeEnvelopeSchema = successEnvelopeSchema(homeSchema);
 export type HomeData = z.infer<typeof homeSchema>;

@@ -182,10 +182,12 @@ export function createProfileService(
       }
       const activityCounts = [...activityByDate].map(([date, count]) => ({ date, count })).sort((a, b) => a.date.localeCompare(b.date));
       const latest = sessions.data?.[0];
+      const unfinished = sessions.data?.find(row => !row.completed_at);
       return homeSchema.parse({
         concepts, recommendations, activityCounts,
         recentSession: latest ? { id: latest.id as string, conceptId: latest.concept_id as string,
           createdAt: latest.created_at as string, completed: Boolean(latest.completed_at) } : null,
+        unfinishedSession: unfinished ? { id: unfinished.id as string, conceptId: unfinished.concept_id as string } : null,
       });
     },
   };

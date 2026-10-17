@@ -1,5 +1,5 @@
 import { Link, NavLink, Navigate, Route, Routes, useLocation } from 'react-router';
-import { BookOpenText, CircleUserRound } from 'lucide-react';
+import { CircleUserRound } from 'lucide-react';
 import { FoundationView } from '@/views/FoundationView';
 import { OnboardingView } from '@/views/OnboardingView';
 import { CatalogueView, HomeView } from '@/views/HomeView';
@@ -19,7 +19,7 @@ export function App() {
     <a className="skip-link" href="#main-content">Skip to content</a>
     <header className="app-header">
       <nav className="header-inner" aria-label="Main navigation">
-        <Link className="brand" to={inProduct ? '/home' : '/'}><span className="brand-mark"><BookOpenText size={18} /></span> LearningCompanion</Link>
+        <Link className="brand" to={inProduct ? '/home' : '/'}><img className="brand-mark" src="/logo.svg" alt="" /> LearningCompanion</Link>
         {inProduct && <div className="main-links"><NavLink to="/home">Home</NavLink><NavLink to="/learn">Learn</NavLink></div>}
         {inProduct && <span className="profile-badge"><CircleUserRound size={19} /> {profile?.isAnonymous ? 'Guest' : 'My learning'}</span>}
       </nav>
