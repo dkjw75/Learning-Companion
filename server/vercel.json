@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm --prefix .. run build -w @learning-companion/shared && npm run build",
+  "functions": {
+    "src/index.ts": { "maxDuration": 60 }
+  }
+}

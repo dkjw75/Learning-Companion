@@ -16,15 +16,20 @@ const localRuns = process.env.NODE_ENV === 'production' || !process.env.DATABASE
 const generation = process.env.DATABASE_URL?.trim() ? createGenerationService(process.env.DATABASE_URL.trim()) : undefined;
 const tutor = process.env.DATABASE_URL?.trim() ? createTutorService(process.env.DATABASE_URL.trim()) : undefined;
 const suggestions = createTopicSuggestionService();
-const server = createApp(undefined, localRuns, generation, undefined, suggestions, tutor).listen(port, '127.0.0.1', () => {
-  console.info(`LearningCompanion API listening on http://127.0.0.1:${port}`);
-});
-server.on('error', error => {
-  console.error(`API could not start (${error.message}).`);
-  process.exitCode = 1;
-});
-for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-  process.on(signal, () => server.close(() => {
-    void Promise.all([localRuns?.close(), generation?.close(), tutor?.close(), suggestions.close()]).finally(() => process.exit(0));
-  }));
+const app = createApp(undefined, localRuns, generation, undefined, suggestions, tutor);
+export default app;
+
+if (!process.env.VERCEL) {
+  const server = app.listen(port, '127.0.0.1', () => {
+    console.info(`LearningCompanion API listening on http://127.0.0.1:${port}`);
+  });
+  server.on('error', error => {
+    console.error(`API could not start (${error.message}).`);
+    process.exitCode = 1;
+  });
+  for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+    process.on(signal, () => server.close(() => {
+      void Promise.all([localRuns?.close(), generation?.close(), tutor?.close(), suggestions.close()]).finally(() => process.exit(0));
+    }));
+  }
 }
