@@ -1,234 +1,119 @@
-# PRD: Visual Technology Learning Companion
+# PRD: Learning Companion
 
-Version 1.3 | 16 October 2026 | Product requirements | On-demand topic tree and source-backed lessons
+Product requirements | On-demand topic tree and source-backed lessons
 
 This document defines the product behaviour. The project name is a working name. Technical implementation decisions are specified separately in [technical-design.md](docs/technical-design.md).
 
-## 1. 4W framework
+## 1. Problem scoping using 4W framework
 
-### Problem
+### Who
 
-Technology students encounter many concepts and tools but struggle to decide where to begin, organise their learning, connect concepts, and identify gaps in their understanding. Learning through separate AI conversations requires students to manage that structure and learning history themselves.
+Tertiary students in computing-related courses who want to gain a deeper understanding of technologies beyond their modules and connect them to projects. The initial focus is students who know some concepts or tools but are unsure what to learn next or how those concepts fit together.
 
-### Audience
+### What
 
-Tertiary students in computing-related courses who want to understand technologies beyond their modules and connect them to projects. The initial catalogue is suitable for students building foundational understanding of web applications.
+Students can find explanations through courses, social media, documentation, and AI, but these often appear as separate pieces of information. Students may struggle to choose a suitable starting point, recognise prerequisites, connect concepts to practical uses, and tell whether they can apply what they have learned. The core problem is not a lack of information. It is a lack of direction, connection, and reliable feedback on understanding.
 
-### Product promise
+### Where
 
-A daily learning companion that helps tech students connect concepts, uncover gaps, and demonstrate what they understand in approximately 15 minutes a day.
+This problem arises during self-directed learning on a laptop, especially when a student encounters an unfamiliar concept.
 
-The app supports technical literacy and exploration. Its learning statuses describe performance on specific objectives and assessments; they are not professional qualifications or guarantees of mastery.
+### Why
+Learning Companion aims to help students:
+- Explore topics that interest them, or allow the app to suggest topics within a chosen area using their selected interests, experience level, and recorded learning activity.
+- See how topics relate to one another, including prerequisites worth revisiting.
+- Learn through focused, source-backed explanations and practical examples.
+- Check whether they can explain and apply a concept independently through short MCQ styled quizzes.
+- Revisit gaps and track the evidence behind their learning status over time.
 
-### Intended benefits
+These features address the problems above as one learning journey: topic suggestions provide a starting point, the tree makes connections and possible prerequisites visible, and source-backed lessons link concepts to practical examples. Understanding checks give students feedback on what they can apply independently; review and learning history show which gaps remain and where to go next.
 
-- Give students a suitable starting point and a manageable learning habit.
-- Identify prerequisites worth revisiting when a student struggles.
-- Connect technologies and concepts to practical applications.
-- Help students practise explaining, comparing, and applying concepts.
-- Maintain organised learning history across lessons and clarification conversations.
-- Make coverage, assessment evidence, and possible gaps visible in one place.
 
-These are intended benefits to validate with students, rather than established learning outcomes.
+## 2. Goal and success
 
-## 2. Initial product scope
+### Product goal
 
-### Topic starters and lessons
+Help students discover tech concepts, see how those concepts connect to what they already know, and strengthen their understanding through lessons and review. The topic tree makes their learning and remaining gaps visible.
 
-The first release starts with four broad, fixed roots: **Software Development**, **AI Engineering**, **Cybersecurity**, and **Cloud Computing**. The existing 12 web, API, and database concepts remain available as catalogue material; the four already source-backed lessons remain usable. They are not a requirement to hand-author every branch before students can explore the tree.
+### Proposed evaluation
 
-Requesting topics produces exactly three student-specific topics, each placed within the selected subtree under a logical parent. A student can choose one to learn or request more topics within its subtree. Save each trio so retries return those same topics; a new deliberate request may add another trio. Each lesson targets one focused objective and roughly 15 minutes of learning. A student can stop expanding at any depth.
+If the product is evaluated in the future, a small pilot with five computing students could follow this flow:
 
-When a student chooses an uncached lesson, Gemini discovers candidate public references; the backend checks and extracts permitted pages, chunks relevant text, and asks Gemini to generate the lesson from those saved passages. Show the actual citations. If suitable references cannot be obtained, show a retry or let the student choose another node; do not invent a successful sourced lesson. No separate badge is needed merely to say a page was found by Gemini. Do not represent automatically found material as independently approved.
+1. Ask each student to use the topic tree to find a concept relevant to their interests and explain how it connects to another topic.
+2. Before the lesson, ask one unaided application question about the chosen concept and record the answer.
+3. Let them complete the lesson and understanding check. Immediately afterward, give a different unaided application question on the same objective. Compare the answers, and ask them to find what to learn or review next in the tree.
+4. One week later, ask a different unaided application question and record whether they can still apply the concept.
 
-### Core features
+Measure how many students find a relevant topic, explain a connection, improve on the application question, and answer the later question correctly. As a provisional target, at least four of five should find a relevant topic and explain a connection, and at least three of five should improve and answer the later question correctly. This is a proposed test plan, not a commitment to run a study or proof of learning effectiveness.
 
-Onboarding, topic recommendations, an expandable topic tree that also shows learning history, guided visual lessons, an animated tutor, understanding checks, targeted review, and guest-to-account progress preservation.
 
-Social features, leaderboards, certificates, and advanced simulations are outside the initial release.
+## 3. Scope and trade-offs
 
-## 3. Screens and user flows
+### Scope
 
-### 3.1 First visit and onboarding
+The current app focuses on three parts of the learning journey, in this order:
 
-1. Explain the learning experience and let the student start as a guest.
-2. Ask about interests and current experience in the broad starter areas.
-3. Offer a skippable three-to-five-question starting-point check.
-4. Use answers to choose an initial recommendation.
-5. Open the home screen.
+1. **Discover:** Students sign in with Google, choose interests and an experience level, then browse 10 different areas across tech. They can enter a topic or ask the app for three suggestions within a chosen branch. The tree saves those topics and shows available lessons and learning status.
+2. **Understand:** Students open a saved lesson or request a new one. New lessons require usable source passages; the app shows a failure and retry if it cannot prepare one. Guided diagrams, examples, citations, and a text-based AI tutor help students explore the concept.
+3. **Strengthen:** Students answer a three-question MCQ check, receive feedback and optional hints, and see their resulting learning status. The home screen shows lesson recommendations, suggested topics to revisit, recent activity, and an unfinished lesson to resume.
 
-Skipping the check leaves understanding unassessed. An isolated diagnostic answer is not enough to claim demonstrated understanding of an entire concept or area.
 
-### 3.2 Home
+### Feature priorities and trade-offs
 
-Present two main choices:
+- **Prioritize a complete discover-to-check path:** Keep topic choice, sourced lessons, and honest assessment results working together before adding more assessment types. The current check uses MCQs; explanation and visual tasks are not in the app yet.
+- **Prioritize visible progress over a full review journey:** Students can revisit lessons and see suggested reviews, but there is no separate recall-first review flow or new independent review check yet. Showing completed lessons and gaps gives students a clear reason to return; a dedicated review check would also need fresh questions to measure recall fairly.
+- **Prioritize useful tutor help over character animation:** The tutor currently answers typed questions and can highlight lesson diagrams. An animated mascot is not part of the current experience.
+- **Limit breadth:** Grow the tree when a student asks instead of hand-authoring every branch. A tree link shows where a topic belongs; it does not establish a verified prerequisite. Social features, leaderboards, certificates, and advanced simulations are outside the current scope.
 
-- **Learn something new:** show a recommended available tree node and a short explanation of why it was chosen. Let the student choose or expand another topic in the tree.
-- **Review:** show previously explored concepts and suggested reviews, while allowing the student to select a concept themselves.
+## 4. Core journey and requirements
 
-Show the most recent activity and a resume action when a session is unfinished. Fifteen minutes is a guide, not a cutoff; clarification and optional tasks can extend the session.
+The current journey is: sign in -> choose interests and experience -> explore the topic tree -> open a visual lesson -> complete its understanding check -> see progress and revisit the lesson when needed.
 
-### 3.3 Learn
+### 4.1 Sign-in and onboarding
 
-Topic-tree selection -> guided visual lesson -> understanding check -> feedback and results -> topic-tree update.
+- Students sign in or register with Google before entering the app. Their learning progress is saved to their account.
+- Onboarding asks for areas of interest and an overall experience level, then opens Home. It does not include a starting-point quiz.
 
-- Show the topic, objectives, estimated duration, and available references before starting.
-- Make the tutor available throughout the lesson.
-- Save progress after meaningful actions so the student can leave and resume.
-- At the end, explain what was assessed and what remains uncertain.
-- Show the concept's previous and current learning statuses when they differ.
-- Link to the updated node in the topic tree.
+### 4.2 Home
 
-### 3.4 Review
+- Show an unfinished lesson first so the student can resume it. Otherwise, show an available recommended lesson with a short reason, or direct the student to Learn when none is available.
+- Show suggested concepts to revisit, recent learning activity, and a link to the topic tree. Students can choose a topic themselves even when Home offers a recommendation.
 
-Topic-tree selection -> recall questions -> targeted explanations and diagrams for gaps -> follow-up questions -> results -> topic-tree update.
+### 4.3 Find a topic
 
-- Begin with recall rather than replaying the complete lesson automatically.
-- Let the student open the complete visual lesson at any time.
-- Give targeted feedback for gaps and offer follow-up questions.
-- Distinguish assisted practice from a fresh independent check.
-- Show the previous and current status after results, for example **developing -> demonstrated understanding** when a qualifying independent check supports that change.
-- Explain the evidence behind the change and provide a link to the updated tree node.
-- If evidence does not justify a change, show the current status and remaining gap clearly.
+- Learn contains the topic tree. Students choose one of ten broad roots, enter a topic they want to learn, or ask the app to suggest topics in that branch.
+- A successful request saves three topics in the selected subtree. Existing topics remain available when the student returns; a new request can add more.
+- Selecting a topic shows its objective, current learning status, available source links, and a Learn or resume action. Students can expand a topic further.
+- A new lesson starts only when suitable source material has been saved. If preparation fails, show a retry rather than presenting an unsourced lesson as complete.
 
-### 3.5 Topic tree
+### 4.4 Learn through a visual lesson
 
-Choose a broad root -> generate and save three topics within that subtree -> select a topic to learn or expand it further -> return to the same saved tree and learning history.
+- Present the concept in guided steps with diagrams, short explanations, a worked example, a common mistake, and citations for the current step.
+- Let students move between steps and save their place so they can resume later. Keep the explanation readable as text alongside the diagram.
+- Provide a text-based tutor during the lesson. Students can ask a typed question or select lesson text to ask about; relevant replies can highlight parts of the diagram. Save the conversation with the lesson.
 
-- The topic tree is the sole place to browse, expand, and select learning topics; there is no separate Explore or knowledge-map screen.
-- Repeated or concurrent copies of one expansion request return the saved trio. Reject duplicate or near-duplicate suggestions and invalid parent links before saving. Show siblings side by side and children below their parent.
-- Selecting a node with an existing lesson reuses it. A new lesson begins only after adequate reference passages have been saved.
-- Show actual learning status, assessed objectives, source links, related lessons, and Learn/Review actions on each relevant node.
+### 4.5 Check understanding
 
-### 3.6 Account creation and settings
+- After the lesson, show three MCQs, including an application question. Students answer each question, see feedback, and may request a hint or retry an incorrect answer.
+- Keep the first answer and any use of help distinct from practice retries. A completed check shows the previous and current learning status and how many first answers were correct without hints.
+- Show the assessment basis and source links for questions. A failed submission must not create a successful result or change learning status.
 
-After the first lesson, offer sign-in to preserve progress across devices. It must retain guest lessons, answers, conversations, and map history.
+### 4.6 Return and revisit
 
-Students can continue as guests. Explain that guest progress depends on retaining their browser session. Provide account settings for interests, reduced motion, sign-out, and deletion of personal learning data.
+- Home suggests previously explored concepts to revisit, and the topic tree shows each topic's current status. Students can reopen a saved lesson and its existing check.
+- Reopening a lesson supports practice; the current app does not start a separate recall-first review round or issue a new independent review check.
 
-## 4. Lessons and the animated tutor
+### 4.7 Account and accessibility
 
-### 4.1 Guided visual lessons
+- Students can sign out. Their saved lessons, answers, topic tree, and tutor conversations belong to their signed-in account.
+- Support keyboard use, visible focus, readable contrast, text explanations for diagrams, and reduced-motion preferences where available. The current app is designed for desktop use.
 
-- Teach through guided diagrams, short captions, and concrete examples.
-- Reveal processes step by step rather than presenting a long article.
-- Let students select components to understand their role and connections.
-- Use appropriate visual formats, including process flows, component relationships, and database tables.
-- Keep essential explanations available as text so diagrams are not the only way to access the content.
-- Show source references near the relevant lesson content.
-- Provide keyboard operation, clear focus states, readable contrast, and a usable mobile layout.
+## 5. Release criteria
 
-### 4.2 Animated tutor character
+### Release criteria
 
-Use an original mascot alongside the lesson, rather than copying another product's character.
-
-- Include idle, thinking, explaining, and encouraging animation states.
-- Accept typed questions about the current lesson and related concepts.
-- Answer with concise text and highlight relevant parts of the current diagram when applicable.
-- Use the current lesson step, available source passages, and relevant learning evidence when responding.
-- Save conversations with the associated lesson or exploration.
-- Support reduced motion; animation is not necessary to access any function.
-- Encourage students without shaming them for mistakes or skipped optional tasks.
-
-The tutor can offer another explanation, an analogy, or a worked example when the student struggles. It should distinguish sourced explanation from unsupported elaboration.
-
-## 5. Assessment and adaptation
-
-### 5.1 Understanding checks
-
-Each supported lesson includes:
-
-- Three required MCQs, including at least one application question.
-- One optional explanation question in the student's own words.
-- One optional visual task.
-
-AI generates lessons and questions using the selected node's saved reference passages and learning objectives. The first four lessons can continue using their approved passages; newly discovered passages are source-backed but not independently approved. Save each assessment's questions and answer criteria before the student answers; do not change the key during the assessment. Label generated assessments AI-assessed unless their keys have actually received independent review. Supporting references improve traceability but do not guarantee every generated question is accurate.
-
-Generated tree lessons use the same assessment format. Once the student chooses an assessment, all three MCQs must be answered to complete that check.
-
-Skipping optional tasks carries no penalty and does not count as evidence of weakness. Students can leave before completing MCQs; the lesson may be explored without having a completed assessment.
-
-Record first answers, independent answers, hints, retries, and optional-task results separately. Assess explanations for conceptual content rather than writing style.
-
-### 5.2 Incorrect answers
-
-1. Explain the relevant misconception or missing reasoning.
-2. Offer a different follow-up question.
-3. Allow continuation without requiring a correct retry.
-4. Record the remaining gap for future recommendations.
-
-A correct assisted retry is useful practice but does not retroactively make the original answer independent. A fresh independent check can establish understanding afterward.
-
-### 5.3 Learning statuses
-
-Use the same statuses for catalogue and generated tree lessons:
-
-- **Not assessed:** no assessment evidence and no learning activity yet; diagnostic information alone does not establish a full concept assessment.
-- **Explored:** a lesson or exploration has been opened, but there is no graded concept-assessment evidence.
-- **Developing:** assessment evidence shows partial understanding, incomplete coverage, or unresolved gaps.
-- **Demonstrated understanding:** the student independently satisfies the assessment criteria for the stated objectives.
-
-For the initial release, three correct first-attempt answers in one complete independent check, including the application question, qualify as demonstrated understanding. Optional tasks add evidence and feedback without becoming mandatory requirements for that status.
-
-Use the latest completed concept check to update the current status, taking independence and assistance into account. A later completed review may change the status in either direction. Preserve earlier results in history. An abandoned partial review does not erase an earlier completed result.
-
-### 5.4 Adaptation
-
-- Offer a different explanation when the student struggles.
-- Use confirmed gaps to recommend review or prerequisites.
-- Treat possible misconceptions as tentative until further evidence supports them.
-- Personalise examples and recommendations using interests and learning history.
-- Keep topic choice available even when the recommendation differs from the student's preference.
-- Explain recommendation reasons in student-friendly language.
-
-## 6. Topic tree and credibility
-
-### 6.1 Topic-tree presentation
-
-Show the four broad roots and only the child branches a student has requested. This tree is also the learning-history view. Summaries report coverage and assessment activity rather than an invented overall mastery percentage.
-
-Selecting a node reveals:
-
-- Its learning status and specific objectives assessed.
-- Its saved source links and assessment basis.
-- Assessment history and supporting answers.
-- Parent, children, and any separately reviewed prerequisites.
-- Source references and related clarification conversations.
-- Learn or Review actions.
-
-Use text as well as colour for learning status. A generated parent-child link is a navigation relationship, not proof of a prerequisite.
-
-### 6.2 Source and assessment evidence
-
-- Require saved, usable references for new tree lessons. When none pass the checks, do not generate a lesson from the model's prior knowledge as a silent fallback.
-- Show citations from the exact saved passages used for the lesson and questions; never accept a fabricated citation from model output.
-- Preserve the source provenance of historical sessions, including any older unverified sessions, independently of assessment outcomes.
-- Label generated assessments **AI-assessed** and explain that the result measures performance against an AI-generated assessment whose accuracy has not been independently verified.
-- Permit progression through all four learning statuses for a generated lesson, but never present a passing assessment as proof that its sources or AI-generated questions were independently reviewed.
-
-### 6.3 Automatic source discovery
-
-- Use Gemini 2.5 Flash with Google Search grounding to suggest candidate URLs. The backend, not Gemini, fetches and extracts each allowed public page and checks its relevance to the selected objective.
-- Store the source title, canonical URL, fetched date, extracted passage snapshot, and lesson citation IDs. Fetch only selected pages; do not crawl a site.
-- Retrieve bounded passages for the lesson generator and tutor. Use Gemini 3.5 Flash-Lite for the saved-passages-to-lesson call.
-- Keep automatic source checks separate from human approval and answer-key review. Preserve AI-assessed labels for generated keys; use a reviewed label only when actual independent review occurred.
-- Show a plain-language failure and retry when no permitted, sufficient passages are available. Do not substitute an unlabeled fixture or model-only answer.
-
-## 7. Acceptance criteria and validation
-
-- Different learning evidence produces meaningfully different explanations or recommendations.
-- Visual lessons support step navigation, component selection, and relevant tutor highlights.
-- The mascot remains usable with reduced motion enabled.
-- Required MCQs and optional tasks follow the agreed completion rules.
-- Review begins with recall, addresses gaps, shows results, and then updates the same topic tree with its evidence.
-- Generated tree lessons can reach demonstrated understanding while retaining their AI-assessed label and source citations.
-- Assessment performance never changes source provenance automatically.
-- Refresh and resume preserve completed answers and do not regenerate saved lessons unnecessarily.
-- Guest progress survives sign-in, including sign-in to an existing account.
-- Private learning records cannot be accessed by another user.
-- Displayed citations resolve to the stored material used.
-- Lessons and questions are generated from saved, checked reference passages; assessment keys remain fixed during the round, private, and labelled according to their actual review basis.
-- Incorrect answers, valid alternative wording, missing references, grading manipulation, invalid AI output, and service failures are tested.
-- Failed generation or grading does not falsely update understanding.
-
-Validate usefulness using initial understanding, post-lesson application, later unaided recall, and student feedback about knowing what to learn next. Report small pilots as early evidence, not proof of general effectiveness.
+- A student can sign in, finish onboarding, discover and save topics, complete a sourced visual lesson and its three-question check, then return to the same progress after signing in again.
+- Topic suggestions remain in the chosen branch; saved topics and lessons are reused rather than regenerated on refresh or retry.
+- New lessons and questions use saved reference passages, and displayed citations point to those sources. Missing sources or failed generation show a plain-language failure without inventing a lesson or result.
+- The lesson, tutor, and check work on desktop with keyboard access, readable text alongside diagrams, and reduced-motion support. Opening a lesson may mark it explored; only a completed check can establish an assessed understanding status. Hints and retries remain separate from first independent answers.
+- Assessment labels reflect the actual review basis, source provenance does not change after a passing check, and private learning records remain accessible only to their owner.
