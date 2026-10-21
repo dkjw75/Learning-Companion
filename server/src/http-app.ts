@@ -208,6 +208,9 @@ export function createApp(profileService: ProfileService = createProfileService(
         status = 400; code = 'INVALID_INPUT'; message = 'Request body exceeds the size limit.';
       }
     }
+    if (req.path === '/api/sessions' && error instanceof AiOperationError)
+      console.error(JSON.stringify({ event: 'lesson_generation_failure', requestId: res.locals.requestId,
+        code: error.code, detail: error.code === 'INVALID_OUTPUT' ? error.message : undefined }));
     res.status(status).json(errorEnvelopeSchema.parse({ error: { code, message, requestId: res.locals.requestId } }));
   };
   app.use(errorHandler);

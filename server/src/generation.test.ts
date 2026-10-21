@@ -68,6 +68,16 @@ describe('Stage 6 generated lessons', () => {
     expect(provider.mock.calls[0]?.[0]).toContain('each workedExample must walk through that same scenario');
   });
 
+  it('tells the repair call which lesson field failed validation', async () => {
+    const invalid = { ...generated, steps: [{ ...generated.steps[0], workedExample: 'Too short.' }, ...generated.steps.slice(1)] };
+    const provider = vi.fn().mockResolvedValueOnce(JSON.stringify(invalid)).mockResolvedValueOnce(JSON.stringify(generated));
+    await generateValidated(input, provider, async () => {});
+    expect(provider.mock.calls[1]?.[0]).toContain('steps.0.workedExample');
+    expect(provider.mock.calls[1]?.[0]).toContain('60');
+    await expect(generateValidated(input, async () => JSON.stringify(invalid), async () => {}))
+      .rejects.toMatchObject({ code: 'INVALID_OUTPUT', message: expect.stringContaining('steps.0.workedExample') });
+  });
+
   it('does not retry a provider timeout or accept a second invalid response', async () => {
     const timeout = vi.fn(async () => { throw new DOMException('Timed out', 'TimeoutError'); });
     await expect(generateValidated(input, timeout, async () => {})).rejects.toMatchObject({ code: 'TIMEOUT' });
