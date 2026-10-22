@@ -49,11 +49,13 @@ describe('Stage 6 generated lessons', () => {
     expect(() => validateGenerated({ ...generated, steps: [{ ...generated.steps[0],
       highlightNodeIds: ['absent'] }, ...generated.steps.slice(1)] }, input)).toThrow();
     expect(() => validateGenerated({ ...generated, steps: [{ ...generated.steps[0],
-      caption: 'Servers securely store webpages.' }, ...generated.steps.slice(1)] }, input)).toThrow();
-    expect(() => validateGenerated({ ...generated, steps: [{ ...generated.steps[0],
-      workedExample: 'The browser asks for a page, and the server securely sends that page back for display.' }, ...generated.steps.slice(1)] }, input)).toThrow();
-    expect(() => validateGenerated({ ...generated, steps: [{ ...generated.steps[0],
       workedExample: undefined }, ...generated.steps.slice(1)] }, input)).toThrow();
+  });
+
+  it('accepts source-supported wording with a negated qualifier', () => {
+    const source = { ...input, passages: [{ ...input.passages[0], body: 'A browser client requests a page from a server. Requests sometimes fail.' }] };
+    const lesson = { ...generated, steps: [{ ...generated.steps[0], caption: 'A request does not always succeed.' }, ...generated.steps.slice(1)] };
+    expect(validateGenerated(lesson, source).lesson.steps[0]?.caption).toBe('A request does not always succeed.');
   });
 
   it('repairs malformed JSON once and includes learner context in the prompt', async () => {

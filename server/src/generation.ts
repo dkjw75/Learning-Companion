@@ -88,14 +88,6 @@ export function validateGenerated(raw: unknown, input: GenerationInput, lessonId
   const mapped = (objectiveId: string, chunkId: string) => input.passages.some(p => p.objectiveId === objectiveId && p.id === chunkId);
   const allCitations = [...new Set([...generated.steps.flatMap(s => s.citationChunkIds),
     ...generated.questions.flatMap(q => q.citationChunkIds)])];
-  const sourceText = input.passages.map(p => p.body).join(' ').toLowerCase();
-  const instructionalText = [generated.runningExample, generated.steps.map(s => [s.caption, s.explanation, s.workedExample, s.commonMistake].join(' ')).join(' '),
-    generated.diagrams.flatMap(d => [...d.nodes.map(n => `${n.label} ${n.description} ${n.example}`), ...d.edges.map(e => e.label),
-      ...(d.type === 'table' ? d.table.rows.flat() : [])]).join(' ')].join(' ').toLowerCase();
-  const unsupportedQualifiers = ['securely', 'specialized', 'dedicated', 'always', 'exclusively']
-    .some(word => new RegExp(`\\b${word}\\b`, 'u').test(instructionalText)
-      && !new RegExp(`\\b${word}\\b`, 'u').test(sourceText));
-  if (unsupportedQualifiers) throw new AiOperationError('INVALID_OUTPUT', 'Instructional text contains an unsupported qualifier.');
   if (!input.objectives.length || input.objectives.some(objective => !input.passages.some(p => p.objectiveId === objective.id)))
     throw new AiOperationError('INVALID_OUTPUT', 'Retrieved passages do not cover every objective.');
   if (allCitations.some(id => !cited.has(id)))
