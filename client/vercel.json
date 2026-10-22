@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://learning-companion-q76ck3vna-darryl8.vercel.app/api/:path*"
+      "destination": "https://learning-companion-api.vercel.app/api/:path*"
     },
     {
       "source": "/(.*)",
