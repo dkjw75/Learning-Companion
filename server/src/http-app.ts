@@ -182,8 +182,10 @@ export function createApp(profileService: ProfileService = createProfileService(
     let status = 500;
     let code: ApiErrorCode = 'INTERNAL_ERROR';
     let message = 'An unexpected error occurred.';
+    let detail = 'Unexpected server error. Report the request ID for diagnosis.';
     if (error instanceof ApiError) {
       ({ status, code, message } = error);
+      detail = message;
     } else if (error instanceof AiOperationError) {
       const mapped = {
         CONFIGURATION: [503, 'SERVICE_UNAVAILABLE', 'Lessons are temporarily unavailable.'],
@@ -197,6 +199,13 @@ export function createApp(profileService: ProfileService = createProfileService(
         PROVIDER_FAILURE: [503, 'PROVIDER_FAILURE', 'Could not prepare this lesson. Please try again.'],
       } as const;
       [status, code, message] = mapped[error.code];
+      detail = `${error.code}: ${message}`;
+      if (req.path === '/api/sessions' && error.code === 'INVALID_OUTPUT') detail = error.message.slice(0, 500);
+      if (req.path === '/api/sessions' && error.code === 'PROVIDER_FAILURE') {
+        const providerHttp = /^Gemini HTTP (\d{3}):/.exec(error.message);
+        detail = providerHttp ? `Gemini HTTP ${providerHttp[1]}: ${error.message.includes('Request contains an invalid argument.')
+          ? 'Request contains an invalid argument.' : 'Provider request failed.'}` : 'Lesson provider request failed.';
+      }
       if (req.path.endsWith('/tutor')) message = error.code === 'QUOTA' ? 'Tutor questions are unavailable for today.'
         : error.code === 'PENDING' ? 'Your question is still being answered.'
         : error.code === 'IDEMPOTENCY_CONFLICT' ? 'This question could not be retried.'
@@ -204,11 +213,16 @@ export function createApp(profileService: ProfileService = createProfileService(
     } else if (typeof error === 'object' && error !== null && 'type' in error) {
       if (error.type === 'entity.parse.failed') {
         status = 400; code = 'INVALID_INPUT'; message = 'Request body must be valid JSON.';
+        detail = message;
       } else if (error.type === 'entity.too.large') {
         status = 400; code = 'INVALID_INPUT'; message = 'Request body exceeds the size limit.';
+        detail = message;
       }
     }
-    res.status(status).json(errorEnvelopeSchema.parse({ error: { code, message, requestId: res.locals.requestId } }));
+    if (req.path === '/api/sessions' && error instanceof AiOperationError)
+      console.error(JSON.stringify({ event: 'lesson_generation_failure', requestId: res.locals.requestId,
+        code: error.code, detail: error.message }));
+    res.status(status).json(errorEnvelopeSchema.parse({ error: { code, message, detail, requestId: res.locals.requestId } }));
   };
   app.use(errorHandler);
   return app;

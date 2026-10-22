@@ -3,7 +3,7 @@ import { entityIdSchema, shortTextSchema } from './common.js';
 
 export const ERROR_CODES = ['INVALID_INPUT', 'UNAUTHENTICATED', 'FORBIDDEN', 'NOT_FOUND', 'CONFLICT', 'QUOTA_EXCEEDED', 'PROVIDER_FAILURE', 'PROVIDER_TIMEOUT', 'SERVICE_UNAVAILABLE', 'INTERNAL_ERROR'] as const;
 export const errorEnvelopeSchema = z.strictObject({
-  error: z.strictObject({ code: z.enum(ERROR_CODES), message: shortTextSchema, requestId: entityIdSchema }),
+  error: z.strictObject({ code: z.enum(ERROR_CODES), message: shortTextSchema, detail: shortTextSchema, requestId: entityIdSchema }),
 });
 export const successEnvelopeSchema = <T extends z.ZodType>(dataSchema: T) => z.strictObject({ data: dataSchema });
 export const healthSchema = z.strictObject({ status: z.literal('ok'), service: z.literal('learning-companion-api') });

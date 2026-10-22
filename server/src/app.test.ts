@@ -3,6 +3,8 @@ import request from 'supertest';
 import { errorEnvelopeSchema, healthEnvelopeSchema, meEnvelopeSchema, type Profile } from '@learning-companion/shared';
 import { createApp } from './http-app.js';
 import { formatSgDateTime, safeSmokeRun } from './ai-runs.js';
+import { AiOperationError } from './ai.js';
+import type { GenerationService } from './generation.js';
 
 describe('foundation API', () => {
   const profile: Profile = {
@@ -64,6 +66,33 @@ describe('foundation API', () => {
     expect(result.error.code).toBe('NOT_FOUND');
     expect(result.error.requestId).toBe(response.headers['x-request-id']);
     expect(result.error.message).toBe('Resource not found.');
+    expect(result.error.detail).toBe('Resource not found.');
+  });
+  it('includes safe lesson diagnostics in Network responses without exposing provider text', async () => {
+    let failure: Error = new AiOperationError('PROVIDER_FAILURE', 'Gemini HTTP 400: Request contains an invalid argument.');
+    const service = { start: async () => { throw failure; }, get: async () => null,
+      setPosition: async () => null, close: async () => {} } satisfies GenerationService;
+    const app = createApp({ getProfile: async () => profile }, undefined, service);
+    const send = () => request(app).post('/api/sessions').set('Authorization', 'Bearer test-token')
+      .send({ conceptId: '00000000-0000-4000-8000-000000000101', mode: 'learn', requestId: crypto.randomUUID() });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const provider = await send().expect(503);
+      expect(errorEnvelopeSchema.parse(provider.body).error).toMatchObject({
+        code: 'PROVIDER_FAILURE', detail: 'Gemini HTTP 400: Request contains an invalid argument.',
+      });
+      failure = new AiOperationError('PROVIDER_FAILURE', 'Gemini HTTP 400: private-passage-sentinel');
+      const redacted = await send().expect(503);
+      expect(redacted.body.error.detail).toBe('Gemini HTTP 400: Provider request failed.');
+      expect(redacted.text).not.toContain('private-passage-sentinel');
+      failure = new AiOperationError('INVALID_OUTPUT', 'steps.0.workedExample: too short');
+      expect(errorEnvelopeSchema.parse((await send().expect(503)).body).error.detail)
+        .toBe('steps.0.workedExample: too short');
+      failure = new Error('database-secret-sentinel');
+      const unexpected = await send().expect(500);
+      expect(errorEnvelopeSchema.parse(unexpected.body).error.detail).toContain('Report the request ID');
+      expect(unexpected.text).not.toContain('database-secret-sentinel');
+    } finally { log.mockRestore(); }
   });
   it('handles malformed JSON without echoing the body', async () => {
     const response = await request(createApp()).post('/api/missing').set('Content-Type', 'application/json').send('{"sensitive":').expect(400);

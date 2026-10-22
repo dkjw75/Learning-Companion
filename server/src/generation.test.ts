@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ApiError as GeminiApiError } from '@google/genai';
 import request from 'supertest';
 import type { Profile } from '@learning-companion/shared';
 import { createApp } from './http-app.js';
@@ -68,6 +69,16 @@ describe('Stage 6 generated lessons', () => {
     expect(provider.mock.calls[0]?.[0]).toContain('each workedExample must walk through that same scenario');
   });
 
+  it('tells the repair call which lesson field failed validation', async () => {
+    const invalid = { ...generated, steps: [{ ...generated.steps[0], workedExample: 'Too short.' }, ...generated.steps.slice(1)] };
+    const provider = vi.fn().mockResolvedValueOnce(JSON.stringify(invalid)).mockResolvedValueOnce(JSON.stringify(generated));
+    await generateValidated(input, provider, async () => {});
+    expect(provider.mock.calls[1]?.[0]).toContain('steps.0.workedExample');
+    expect(provider.mock.calls[1]?.[0]).toContain('60');
+    await expect(generateValidated(input, async () => JSON.stringify(invalid), async () => {}))
+      .rejects.toMatchObject({ code: 'INVALID_OUTPUT', message: expect.stringContaining('steps.0.workedExample') });
+  });
+
   it('does not retry a provider timeout or accept a second invalid response', async () => {
     const timeout = vi.fn(async () => { throw new DOMException('Timed out', 'TimeoutError'); });
     await expect(generateValidated(input, timeout, async () => {})).rejects.toMatchObject({ code: 'TIMEOUT' });
@@ -75,6 +86,17 @@ describe('Stage 6 generated lessons', () => {
     const repair = vi.fn(async () => {});
     await expect(generateValidated(input, async () => '{bad', repair)).rejects.toMatchObject({ code: 'INVALID_OUTPUT' });
     expect(repair).toHaveBeenCalledTimes(1);
+  });
+
+  it('retains a safe provider error for request-ID logging without retrying', async () => {
+    const provider = vi.fn(async () => { throw new GeminiApiError({ status: 400,
+      message: JSON.stringify({ error: { message: 'Invalid response_schema: unsupported field' } }) }); });
+    const repair = vi.fn(async () => {});
+    await expect(generateValidated(input, provider, repair)).rejects.toMatchObject({
+      code: 'PROVIDER_FAILURE', message: expect.stringContaining('HTTP 400: Invalid response_schema: unsupported field'),
+    });
+    expect(provider).toHaveBeenCalledTimes(1);
+    expect(repair).not.toHaveBeenCalled();
   });
 
   it('requires a verified learner and returns only the saved public session', async () => {
