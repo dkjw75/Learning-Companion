@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { GoogleGenAI, Type, type Schema } from '@google/genai';
+import { ApiError as GeminiApiError, GoogleGenAI, Type, type Schema } from '@google/genai';
 import { Pool } from 'pg';
 import { z } from 'zod';
 import { assessmentRoundSchema, submitAnswerResponseSchema, diagramSchema, lessonSchema, lessonStepSchema, mcqSchema,
@@ -45,23 +45,23 @@ const node = { type: Type.OBJECT, properties: { id, label: { ...string, minLengt
 const edge = { type: Type.OBJECT, properties: { id, from: id, to: id, label: { ...string, minLength: '1', maxLength: '60' } }, required: ['id', 'from', 'to', 'label'] };
 const diagram = { type: Type.OBJECT, properties: { id, title: string,
   type: { type: Type.STRING, enum: ['flow', 'relationship', 'table'] },
-  nodes: { type: Type.ARRAY, items: node, maxItems: '8' }, edges: { type: Type.ARRAY, items: edge, maxItems: '24' },
-  table: { type: Type.OBJECT, properties: { columns: { type: Type.ARRAY, items: string, minItems: '1', maxItems: '8' }, rows: { type: Type.ARRAY, items: { type: Type.ARRAY, items: string, minItems: '1', maxItems: '8' }, minItems: '1', maxItems: '20' } }, required: ['columns', 'rows'] },
+  nodes: { type: Type.ARRAY, items: node }, edges: { type: Type.ARRAY, items: edge },
+  table: { type: Type.OBJECT, properties: { columns: { type: Type.ARRAY, items: string, minItems: '1' }, rows: { type: Type.ARRAY, items: { type: Type.ARRAY, items: string, minItems: '1' }, minItems: '1' } }, required: ['columns', 'rows'] },
 }, required: ['id', 'title', 'type', 'nodes', 'edges'] };
 const step = { type: Type.OBJECT, properties: { id, heading: string, caption: { ...string, description: 'At most 100 words.' },
   explanation: { ...string, minLength: '80', maxLength: '2400', description: 'At least two paragraphs separated by a blank line.' },
   workedExample: { ...string, minLength: '60', maxLength: '1200' }, commonMistake: { ...string, minLength: '40', maxLength: '800' },
-  diagramId: id, highlightNodeIds: { ...stringArray, maxItems: '8' }, highlightEdgeIds: { ...stringArray, maxItems: '24' }, citationChunkIds: { type: Type.ARRAY, items: string, minItems: '1', maxItems: '6' },
-  highlightRowIndexes: { type: Type.ARRAY, items: { type: Type.INTEGER, minimum: 0 }, maxItems: '20' },
+  diagramId: id, highlightNodeIds: stringArray, highlightEdgeIds: stringArray, citationChunkIds: { type: Type.ARRAY, items: string, minItems: '1' },
+  highlightRowIndexes: { type: Type.ARRAY, items: { type: Type.INTEGER, minimum: 0 } },
 }, required: ['id', 'heading', 'caption', 'explanation', 'workedExample', 'commonMistake', 'diagramId', 'highlightNodeIds', 'highlightEdgeIds', 'highlightRowIndexes', 'citationChunkIds'] };
 const question = { type: Type.OBJECT, properties: { id, familyId: id, prompt: string,
-  kind: { type: Type.STRING, enum: ['recall', 'application'] }, objectiveIds: { ...stringArray, minItems: '1', maxItems: '12' }, citationChunkIds: { type: Type.ARRAY, items: string, minItems: '1', maxItems: '6' },
-  options: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id, text: string }, required: ['id', 'text'] }, minItems: '4', maxItems: '4' },
+  kind: { type: Type.STRING, enum: ['recall', 'application'] }, objectiveIds: { ...stringArray, minItems: '1' }, citationChunkIds: { type: Type.ARRAY, items: string, minItems: '1' },
+  options: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id, text: string }, required: ['id', 'text'] }, minItems: '4' },
   correctOptionId: id, feedbackCriteria: { ...string, minLength: '1', maxLength: '1200' },
 }, required: ['id', 'familyId', 'prompt', 'kind', 'objectiveIds', 'citationChunkIds', 'options', 'correctOptionId', 'feedbackCriteria'] };
 const generationResponseSchema = { type: Type.OBJECT, properties: { title: { ...string, minLength: '1', maxLength: '120' }, runningExample: { ...string, minLength: '30', maxLength: '300' },
-  diagrams: { type: Type.ARRAY, items: diagram, minItems: '1', maxItems: '2' }, steps: { type: Type.ARRAY, items: step, minItems: '4', maxItems: '6' },
-  questions: { type: Type.ARRAY, items: question, minItems: '3', maxItems: '3' },
+  diagrams: { type: Type.ARRAY, items: diagram, minItems: '1' }, steps: { type: Type.ARRAY, items: step, minItems: '4' },
+  questions: { type: Type.ARRAY, items: question, minItems: '3' },
 }, required: ['title', 'runningExample', 'diagrams', 'steps', 'questions'] };
 
 export function createGenerationProvider(apiKey = process.env.GEMINI_API_KEY?.trim(), model = process.env.GEMINI_MODEL?.trim(), responseSchema: Schema = generationResponseSchema): GenerateProvider {
@@ -130,6 +130,19 @@ export function validateGenerated(raw: unknown, input: GenerationInput, lessonId
   return { lesson, round, answerKeys, feedbackCriteria, citations };
 }
 
+function providerFailure(error: unknown) {
+  let detail = error instanceof Error ? error.message : 'Unknown provider error';
+  if (error instanceof GeminiApiError) {
+    try { detail = (JSON.parse(error.message) as { error?: { message?: string } }).error?.message ?? detail; }
+    catch { /* Keep the SDK message when the provider did not return JSON. */ }
+  }
+  for (const secret of [process.env.GEMINI_API_KEY, process.env.SUPABASE_SECRET_KEY, process.env.DATABASE_URL]) {
+    if (secret) detail = detail.replaceAll(secret, '[redacted]');
+  }
+  detail = detail.replace(/Bearer\s+\S+|https?:\/\/\S+/giu, '[redacted]').replace(/\s+/gu, ' ').slice(0, 500);
+  return new AiOperationError('PROVIDER_FAILURE', `Gemini ${error instanceof GeminiApiError ? `HTTP ${error.status}` : error instanceof Error ? error.name : 'error'}: ${detail}`);
+}
+
 function promptFor(input: GenerationInput, repair?: string) {
   const diagramStandard = `DIAGRAM STANDARD FOR EVERY TOPIC: Choose ONE concrete runningExample (30-300 characters) that fits this concept and learner. Reuse its people, records, values, and actions across every diagram and step; each workedExample must walk through that same scenario. Diagrams illustrate the example rather than repeating definitions. Every node must have an example field (at most 200 characters) showing actual illustrative values, a small payload, code, or a before/after state, using newlines where helpful. Keep node labels short (at most 50 characters) and connection labels short (at most 60 characters), describing the specific action or relationship. Use 2-4 nodes where possible, ordered in reading order in two columns. Flow and relationship diagrams need connected nodes and at least one edge; never use self edges. Tables must contain concrete records from the same example, not definitions. Each step must highlight at least one relevant node/edge, or at least one zero-based highlightRowIndexes entry for tables. Use empty highlightRowIndexes for non-table diagrams and empty node/edge highlights for tables. Prefer a table for records, relationship for structural links, and flow for actions. The app supplies arrows, colour, layout and motion; never generate coordinates, markup, styles or animation code. Examples are illustrative, not claims about real people or services.`;
 
@@ -150,7 +163,7 @@ export async function generateValidated(input: GenerationInput, provider: Genera
       if (error instanceof AiOperationError) throw error;
       if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError' || /timeout|timed out/i.test(error.message)))
         throw new AiOperationError('TIMEOUT', 'Lesson generation timed out.');
-      throw new AiOperationError('PROVIDER_FAILURE', 'Lesson generation failed.');
+      throw providerFailure(error);
     }
     try { return validateGenerated(JSON.parse(raw), input); }
     catch (error) {

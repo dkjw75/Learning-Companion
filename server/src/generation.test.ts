@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ApiError as GeminiApiError } from '@google/genai';
 import request from 'supertest';
 import type { Profile } from '@learning-companion/shared';
 import { createApp } from './http-app.js';
@@ -85,6 +86,17 @@ describe('Stage 6 generated lessons', () => {
     const repair = vi.fn(async () => {});
     await expect(generateValidated(input, async () => '{bad', repair)).rejects.toMatchObject({ code: 'INVALID_OUTPUT' });
     expect(repair).toHaveBeenCalledTimes(1);
+  });
+
+  it('retains a safe provider error for request-ID logging without retrying', async () => {
+    const provider = vi.fn(async () => { throw new GeminiApiError({ status: 400,
+      message: JSON.stringify({ error: { message: 'Invalid response_schema: unsupported field' } }) }); });
+    const repair = vi.fn(async () => {});
+    await expect(generateValidated(input, provider, repair)).rejects.toMatchObject({
+      code: 'PROVIDER_FAILURE', message: expect.stringContaining('HTTP 400: Invalid response_schema: unsupported field'),
+    });
+    expect(provider).toHaveBeenCalledTimes(1);
+    expect(repair).not.toHaveBeenCalled();
   });
 
   it('requires a verified learner and returns only the saved public session', async () => {
