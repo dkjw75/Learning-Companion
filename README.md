@@ -1,5 +1,6 @@
 # LearningCompanion
 Try it here: https://learning-companion-blush.vercel.app/ 
+
 PRD: https://github.com/dkjw75/Learning-Companion/blob/main/PRD.md 
 
 LearningCompanion is a desktop web app that helps computing students find a direction for self-directed technology learning, study a concept through a visual lesson, and check what they understood.
